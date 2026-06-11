@@ -652,10 +652,9 @@ for (const _c in NAMES) {
   if (_c !== "FWC" && NAMES[_c][1] === "Team Badge") NAMES[_c][1] = "Goleiro";
 }
 const STORAGE_KEY = "fwc_mockup_v3";
-const GROUPS_ORDER = ["FWC","A","B","C","D","E","F","G","H","I","J","K","L"];
+const GROUPS_ORDER = ["A","B","C","D","E","F","G","H","I","J","K","L","FWC"];
 // Ordem oficial do álbum (esquerda -> direita), conforme listapaíses.csv
 const ALBUM_ORDER = [
-  "FWC",
   "MEX","RSA","KOR","CZE",
   "CAN","BIH","QAT","SUI",
   "BRA","MAR","HAI","SCO",
@@ -667,7 +666,8 @@ const ALBUM_ORDER = [
   "FRA","SEN","IRQ","NOR",
   "ARG","ALG","AUT","JOR",
   "POR","COD","UZB","COL",
-  "ENG","CRO","GHA","PAN"
+  "ENG","CRO","GHA","PAN",
+  "FWC"
 ];
 function sortByAlbum(arr) {
   return arr.slice().sort((a, b) => {
