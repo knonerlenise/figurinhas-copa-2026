@@ -1,0 +1,1473 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0f172a" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="FWC 2026" />
+<link rel="apple-touch-icon" href="icon.svg" />
+<link rel="icon" type="image/svg+xml" href="icon.svg" />
+<link rel="manifest" href="manifest.webmanifest" />
+<title>Figurinhas Copa 2026</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #1e293b;
+    --panel-2: #334155;
+    --border: #0b1220;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --accent: #38bdf8;
+    --miss: #475569;
+    --ok: #22c55e;
+    --trade: #3b82f6;
+    --lvl-red: #ef4444;
+    --lvl-orange: #f97316;
+    --lvl-yellow: #eab308;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    overscroll-behavior: none;
+    -webkit-font-smoothing: antialiased;
+  }
+  body { padding-bottom: env(safe-area-inset-bottom); }
+
+  /* ===== APP CONTAINER (mobile-sized on desktop) ===== */
+  .app {
+    max-width: 480px;
+    margin: 0 auto;
+    background: var(--bg);
+    min-height: 100vh;
+    position: relative;
+    box-shadow: 0 0 30px rgba(0,0,0,0.35);
+  }
+
+  /* ===== TOP BAR ===== */
+  .topbar {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--panel);
+    padding: 12px 16px 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .topbar .back {
+    background: transparent; border: none; color: var(--accent);
+    font-size: 22px; font-weight: 700; cursor: pointer; padding: 0 4px;
+  }
+  .topbar .titles { flex: 1; min-width: 0; }
+  .topbar .title { font-size: 13px; color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase; }
+  .topbar .progress-row { display: flex; align-items: baseline; gap: 8px; margin-top: 2px; }
+  .topbar .progress-num { font-size: 22px; font-weight: 700; }
+  .topbar .progress-pct { font-size: 13px; color: var(--muted); }
+  .topbar .bar { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 6px; }
+  .topbar .bar > div { height: 100%; background: var(--ok); transition: width 0.2s; }
+  .topbar .stat-pills { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; font-size: 11px; }
+  .pill { padding: 2px 8px; border-radius: 999px; background: var(--border); color: var(--muted); }
+  .pill.ok { color: var(--ok); }
+  .pill.trade { color: var(--trade); }
+
+  /* ===== HOME (2-col group cards) ===== */
+  .home { padding: 12px 12px 80px; }
+  .home-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .group-card {
+    background: var(--panel);
+    border: 1px solid var(--panel-2);
+    border-radius: 12px;
+    padding: 10px 10px 8px;
+    cursor: pointer;
+    display: flex; flex-direction: column;
+    transition: transform 0.06s ease, border-color 0.15s;
+    user-select: none;
+  }
+  .group-card:active { transform: scale(0.98); }
+  .group-card.complete { border-color: var(--accent); }
+  .gc-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .gc-name { font-size: 14px; font-weight: 700; letter-spacing: 0.3px; }
+  .gc-count { font-size: 11px; color: var(--muted); font-weight: 600; }
+  .gc-bar {
+    height: 4px; background: var(--border); border-radius: 2px;
+    overflow: hidden; margin-bottom: 8px;
+  }
+  .gc-bar > div { height: 100%; background: var(--ok); transition: width 0.2s; }
+  .group-card.complete .gc-bar > div { background: var(--accent); }
+  .gc-list { display: flex; flex-direction: column; gap: 6px; }
+  .gc-row {
+    display: grid; grid-template-columns: 18px 32px 1fr 14px;
+    align-items: center; gap: 6px;
+    font-size: 11px;
+  }
+  .gc-row .gc-flag { font-size: 14px; line-height: 1; }
+  .gc-row .gc-code { font-weight: 700; letter-spacing: 0.3px; }
+  .gc-row .gc-pbar {
+    height: 6px; background: var(--border);
+    border-radius: 3px; overflow: hidden;
+  }
+  .gc-row .gc-pbar > div { height: 100%; transition: width 0.2s; }
+  .gc-row .gc-dupes {
+    font-size: 11px; font-weight: 500; font-style: italic; color: var(--trade);
+    font-variant-numeric: tabular-nums;
+    text-align: right; line-height: 1;
+  }
+
+  /* ===== COUNTRY VIEW: tabs + pills ===== */
+  .group-tabs {
+    display: flex; gap: 4px; overflow-x: auto;
+    padding: 8px 12px; background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 9;
+    scrollbar-width: none;
+  }
+  .group-tabs::-webkit-scrollbar { display: none; }
+  .group-tab {
+    flex: 0 0 auto;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px; font-weight: 700;
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid transparent;
+    cursor: pointer;
+  }
+  .group-tab.active { background: var(--border); color: var(--text); border-color: var(--accent); }
+
+  .country-pills {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .country-pill {
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: var(--panel);
+    border: 1px solid var(--panel-2);
+    cursor: pointer;
+    min-height: 64px;
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .country-pill.active { border-color: var(--accent); background: var(--border); }
+  .country-pill.span-2 { grid-column: 1 / -1; }
+  .country-pill .pill-name { font-size: 13px; font-weight: 700; letter-spacing: 0.3px; }
+  .country-pill .pill-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .country-pill .pill-meta .meta-owned { font-weight: 700; }
+  .country-pill .pill-meta .meta-dupes { font-style: italic; color: var(--trade); margin-left: 2px; }
+  .country-pill .pill-bar { height: 4px; background: var(--border); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+  .country-pill .pill-bar > div { height: 100%; transition: width 0.2s; }
+
+  /* ===== COUNTRY (drill) ===== */
+  .country-screen { padding-bottom: 80px; }
+  .country-header {
+    padding: 14px 16px 6px;
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .country-header h2 { margin: 0; font-size: 18px; font-weight: 700; }
+  .country-header .header-meta { font-size: 12px; color: var(--muted); }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    padding: 4px 12px 16px;
+  }
+  .tile {
+    aspect-ratio: 1 / 1.1;
+    border-radius: 10px;
+    background: var(--miss);
+    color: white;
+    display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+    padding: 6px 5px 7px;
+    text-align: center;
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+    touch-action: manipulation;
+    transition: transform 0.06s ease, background 0.15s;
+  }
+  .tile:active { transform: scale(0.94); }
+  .tile.ok { background: var(--ok); }
+  .tile.trade { background: var(--trade); }
+  .tile .id {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.4px;
+    opacity: 0.8; text-transform: uppercase;
+  }
+  .tile .name {
+    font-size: 12px; font-weight: 600;
+    line-height: 1.15;
+    overflow: hidden; text-overflow: ellipsis;
+    display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical;
+    word-break: break-word;
+    flex: 1 1 auto;
+    padding: 2px 0;
+    align-self: center;
+    width: 100%;
+  }
+  .tile .badge {
+    position: absolute;
+    top: 3px; right: 4px;
+    background: rgba(0,0,0,0.4);
+    color: white;
+    font-size: 10px; font-weight: 700;
+    border-radius: 6px;
+    padding: 1px 5px;
+    min-width: 14px;
+    text-align: center;
+  }
+  .tile.foil::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+  }
+  .tile.foil-owned::before {
+    border: 2px solid #fbbf24;
+    box-shadow: 0 0 8px rgba(251, 191, 36, 0.55);
+  }
+  .tile.foil-miss::before {
+    border: 2px solid var(--muted);
+  }
+
+  /* ===== TRADE SCREEN ===== */
+  .trade-screen { padding: 12px 12px 80px; }
+  .trade-summary {
+    background: var(--panel);
+    border: 1px solid var(--panel-2);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    display: flex; align-items: baseline; gap: 10px;
+  }
+  .trade-summary .ts-num {
+    font-size: 28px; font-weight: 700; color: var(--trade);
+    font-variant-numeric: tabular-nums;
+  }
+  .trade-summary .ts-label {
+    font-size: 11px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.6px;
+  }
+  .trade-empty {
+    text-align: center; color: var(--muted);
+    padding: 40px 20px; font-size: 14px;
+    background: var(--panel); border-radius: 12px;
+  }
+  .trade-group { margin-bottom: 14px; }
+  .trade-group-header {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 0 4px 6px;
+    font-size: 11px; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.6px;
+  }
+  .trade-group-header .tgh-count {
+    font-weight: 600;
+    color: var(--trade);
+    font-style: italic;
+  }
+  .trade-list { display: flex; flex-direction: column; gap: 6px; }
+  .trade-row-wrap {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .trade-row-action {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: flex-end;
+    padding-right: 18px;
+    background: var(--lvl-red);
+    color: #fff; font-weight: 700; font-size: 15px; letter-spacing: 0.5px;
+  }
+  .trade-row {
+    position: relative;
+    display: grid;
+    grid-template-columns: 70px 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--panel);
+    border: 1px solid var(--panel-2);
+    border-radius: 10px;
+    cursor: grab;
+    touch-action: pan-y;
+    transition: border-color 0.12s, transform 0.18s ease;
+  }
+  .trade-row:hover { border-color: var(--accent); }
+  .trade-row .tr-code {
+    font-size: 13px; font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.3px;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .trade-row .tr-foil { color: #fbbf24; font-size: 11px; }
+  .trade-row .tr-info { min-width: 0; }
+  .trade-row .tr-name {
+    font-size: 13px; font-weight: 500;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .trade-row .tr-country {
+    font-size: 11px; color: var(--muted); margin-top: 1px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .trade-row .tr-count {
+    font-size: 15px; font-weight: 500; font-style: italic;
+    color: var(--trade);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ===== STATS SCREEN ===== */
+  .stats-screen { padding: 12px 12px 80px; }
+  .stats-hero {
+    background: var(--panel); border: 1px solid var(--panel-2);
+    border-radius: 12px; padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+  .stats-hero .sh-row {
+    display: flex; align-items: baseline; gap: 8px;
+  }
+  .stats-hero .sh-num {
+    font-size: 32px; font-weight: 700; line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .stats-hero .sh-pct { font-size: 13px; color: var(--muted); }
+  .stats-hero .sh-sub {
+    font-size: 11px; color: var(--muted); margin-top: 4px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .stats-hero .sh-bar {
+    height: 8px; background: var(--border); border-radius: 4px;
+    overflow: hidden; margin-top: 10px;
+  }
+  .stats-hero .sh-bar > div { height: 100%; transition: width 0.2s; }
+  .stats-quad {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 8px; margin-bottom: 16px;
+  }
+  .stat-card {
+    background: var(--panel); border: 1px solid var(--panel-2);
+    border-radius: 10px; padding: 10px 12px;
+  }
+  .stat-card .sc-num {
+    font-size: 20px; font-weight: 700;
+    font-variant-numeric: tabular-nums; line-height: 1.1;
+  }
+  .stat-card .sc-sub { font-size: 11px; color: var(--muted); }
+  .stat-card .sc-label {
+    font-size: 10px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;
+  }
+  .stat-card.dupes .sc-num { color: var(--trade); }
+  .stat-card.miss .sc-num { color: var(--lvl-red); }
+  .stat-card.foils .sc-num { color: #fbbf24; }
+  .stats-section { margin-bottom: 16px; }
+  .stats-section-title {
+    font-size: 11px; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.6px;
+    padding: 0 4px 6px;
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .stats-section-title .sst-hint {
+    color: var(--muted); font-weight: 400; font-style: italic;
+    text-transform: none; letter-spacing: 0; font-size: 11px;
+  }
+  .stats-list { display: flex; flex-direction: column; gap: 6px; }
+  .stats-row {
+    display: grid;
+    grid-template-columns: 22px 50px 1fr auto;
+    align-items: center; gap: 8px;
+    padding: 9px 12px;
+    background: var(--panel); border: 1px solid var(--panel-2);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: border-color 0.12s, transform 0.06s ease;
+  }
+  .stats-row:active { transform: scale(0.99); }
+  .stats-row:hover { border-color: var(--accent); }
+  .stats-row .sr-flag { font-size: 16px; line-height: 1; }
+  .stats-row .sr-code {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.3px;
+  }
+  .stats-row .sr-name {
+    font-size: 12px; color: var(--muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .stats-row .sr-stat {
+    font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums;
+  }
+  .stats-row.dupes .sr-stat {
+    color: var(--trade); font-style: italic; font-weight: 500;
+  }
+  .stats-empty {
+    font-size: 12px; color: var(--muted); padding: 12px;
+    text-align: center; background: var(--panel); border-radius: 10px;
+  }
+
+  /* ===== FOOTER ===== */
+  .footer {
+    position: fixed; bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 100%; max-width: 480px;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    text-align: center;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .footer button {
+    background: none; border: none; color: var(--muted);
+    padding: 14px 0; font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  .footer button.active { color: var(--accent); }
+  .footer button.disabled { opacity: 0.45; }
+
+  /* ===== MATCH SCREEN ===== */
+  .match-screen { padding: 12px 12px 80px; }
+  .match-actions { display: flex; gap: 8px; margin-bottom: 10px; }
+  .match-btn {
+    flex: 1; padding: 11px 10px; border-radius: 10px;
+    border: 1px solid var(--panel-2); background: var(--panel);
+    color: var(--text); font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  .match-btn.primary { background: var(--accent); border-color: var(--accent); color: #04121f; }
+  .match-msg { font-size: 12px; min-height: 16px; margin-bottom: 8px; color: var(--muted); }
+  .match-msg.err { color: var(--lvl-red); }
+  .match-msg.ok { color: var(--ok); }
+  .match-empty {
+    text-align: center; color: var(--muted);
+    padding: 40px 20px; font-size: 14px;
+    background: var(--panel); border-radius: 12px;
+  }
+  .match-empty-sm { color: var(--muted); font-size: 12px; padding: 6px 4px; }
+  .match-hero {
+    background: var(--panel); border: 1px solid var(--panel-2);
+    border-radius: 12px; padding: 12px 14px; margin-bottom: 14px;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  }
+  .match-hero .mh-owner { font-size: 15px; font-weight: 700; }
+  .match-hero .mh-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .match-hero .mh-reset {
+    border: 1px solid var(--panel-2); background: transparent; color: var(--muted);
+    border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer; white-space: nowrap;
+  }
+  .match-section { margin-bottom: 18px; }
+  .match-section-title {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 0 4px 8px; font-size: 13px; font-weight: 700;
+  }
+  .match-section-title .mst-hint { color: var(--muted); font-weight: 600; font-size: 12px; }
+  .match-group { margin-bottom: 10px; }
+  .match-group-h {
+    font-size: 11px; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.6px; padding: 0 4px 4px;
+  }
+  .match-row {
+    display: grid; grid-template-columns: 70px 1fr; gap: 10px; align-items: center;
+    padding: 8px 12px; background: var(--panel); border: 1px solid var(--panel-2);
+    border-radius: 10px; margin-bottom: 4px;
+  }
+  .match-row .mr-code {
+    font-size: 13px; font-weight: 700; letter-spacing: 0.3px;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .match-row .mr-code.recv { color: var(--ok); }
+  .match-row .mr-code.give { color: var(--trade); }
+  .match-row .mr-name {
+    font-size: 13px; font-weight: 500;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .match-row .mr-country { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .match-reset-wrap { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--panel-2); }
+  .match-reset {
+    width: 100%; padding: 10px; border-radius: 10px;
+    border: 1px solid var(--lvl-red); background: transparent; color: var(--lvl-red);
+    font-size: 12px; font-weight: 600; cursor: pointer;
+  }
+
+  /* ===== MODAL ===== */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100; padding: 16px;
+  }
+  .modal-backdrop.hidden { display: none; }
+  .modal {
+    background: var(--panel); border: 1px solid var(--panel-2);
+    border-radius: 14px; max-width: 440px; width: 100%;
+    padding: 18px; color: var(--text);
+  }
+  .modal h3 {
+    margin: 0 0 4px; font-size: 16px; font-weight: 700;
+  }
+  .modal .modal-desc {
+    font-size: 12px; color: var(--muted); margin: 0 0 12px;
+  }
+  .modal .modal-input {
+    width: 100%; padding: 9px 10px; font-size: 13px;
+    background: var(--bg); color: var(--text);
+    border: 1px solid var(--panel-2); border-radius: 8px;
+    box-sizing: border-box;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  .modal .modal-input:focus { outline: none; border-color: var(--accent); }
+  .modal .modal-actions {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;
+  }
+  .modal .modal-btn {
+    flex: 1; min-width: 80px;
+    padding: 8px 10px; font-size: 12px; font-weight: 600;
+    background: var(--bg); color: var(--text);
+    border: 1px solid var(--panel-2); border-radius: 8px;
+    cursor: pointer;
+  }
+  .modal .modal-btn.primary { background: var(--accent); color: #052433; border-color: var(--accent); }
+  .modal .modal-btn.danger { color: var(--lvl-red); }
+  .modal .modal-msg {
+    margin-top: 10px; font-size: 11px;
+    padding: 6px 10px; border-radius: 6px;
+    background: var(--bg); color: var(--muted);
+    white-space: pre-wrap; word-break: break-word;
+    min-height: 14px;
+  }
+  .modal .modal-msg.ok { color: var(--ok); }
+  .modal .modal-msg.err { color: var(--lvl-red); }
+
+  /* ===== MOCK NOTICE ===== */
+  .mock-notice {
+    background: #422006; color: #fbbf24;
+    padding: 6px 14px; font-size: 11px; text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .mock-notice button {
+    background: transparent; border: 1px solid #92400e; color: #fbbf24;
+    padding: 2px 8px; border-radius: 4px; margin-left: 8px;
+    font-size: 11px; cursor: pointer;
+  }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<div class="mock-notice">
+  Figurinhas Copa 2026
+  <button id="settings-btn">Backup</button>
+</div>
+
+<div class="modal-backdrop hidden" id="settings-modal">
+  <div class="modal" role="dialog" aria-label="Backup">
+    <h3>Backup / Restaurar</h3>
+    <p class="modal-desc">Exporte um arquivo com sua coleção pra guardar, ou importe um backup pra restaurar (ou abrir em outro aparelho).</p>
+    <div class="modal-actions">
+      <button class="modal-btn primary" id="backup-export">Exportar</button>
+      <button class="modal-btn" id="backup-import">Importar</button>
+      <button class="modal-btn" id="settings-close">Fechar</button>
+    </div>
+    <input type="file" id="import-file" accept="application/json,.json" class="hidden">
+    <div class="modal-msg" id="settings-msg"></div>
+  </div>
+</div>
+
+<div class="topbar">
+  <button class="back hidden" id="back-btn">‹</button>
+  <div class="titles">
+    <div class="title" id="top-title">Figurinhas Copa 2026</div>
+    <div class="progress-row">
+      <div class="progress-num"><span id="owned-count">0</span> / <span id="total-count">980</span></div>
+      <div class="progress-pct" id="progress-pct">0%</div>
+    </div>
+    <div class="bar"><div id="progress-bar" style="width: 0%"></div></div>
+    <div class="stat-pills">
+      <span class="pill ok">ok <span id="ok-count">0</span></span>
+      <span class="pill trade">dupes <span id="dupes-count">0</span></span>
+      <span class="pill">missing <span id="miss-count">0</span></span>
+    </div>
+  </div>
+</div>
+
+<div id="home" class="home">
+  <div class="home-grid" id="home-grid"></div>
+</div>
+
+<div id="country" class="country-screen hidden">
+  <div class="group-tabs" id="group-tabs"></div>
+  <div class="country-pills" id="country-pills"></div>
+  <div class="country-header">
+    <h2 id="country-name">Country</h2>
+    <div class="header-meta" id="country-meta">0 / 20</div>
+  </div>
+  <div class="grid" id="grid"></div>
+</div>
+
+<div id="trade" class="trade-screen hidden"></div>
+
+<div id="stats" class="stats-screen hidden"></div>
+
+<div id="match" class="match-screen hidden"></div>
+
+</div><!-- /.app -->
+
+<div class="footer">
+  <button class="active" id="tab-album">Album</button>
+  <button id="tab-trade">Trade</button>
+  <button id="tab-stats">Status</button>
+  <button id="tab-match">Match</button>
+</div>
+
+<script>
+const ORIGINAL = [{"code": "MEX", "group": "A", "country": "Mexico", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "KOR", "group": "A", "country": "South Korea", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "RSA", "group": "A", "country": "South Africa", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "CZE", "group": "A", "country": "Czechia", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "CAN", "group": "B", "country": "Canada", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "SUI", "group": "B", "country": "Switzerland", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "QAT", "group": "B", "country": "Qatar", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "BIH", "group": "B", "country": "Bosnia and Herzegovina", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "BRA", "group": "C", "country": "Brazil", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "MAR", "group": "C", "country": "Morocco", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "SCO", "group": "C", "country": "Scotland", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "HAI", "group": "C", "country": "Haiti", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "USA", "group": "D", "country": "United States", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "PAR", "group": "D", "country": "Paraguay", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "AUS", "group": "D", "country": "Australia", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "TUR", "group": "D", "country": "Türkiye", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "GER", "group": "E", "country": "Germany", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "ECU", "group": "E", "country": "Ecuador", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "CIV", "group": "E", "country": "Ivory Coast", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "CUW", "group": "E", "country": "Curaçao", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "NED", "group": "F", "country": "Netherlands", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "JPN", "group": "F", "country": "Japan", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "TUN", "group": "F", "country": "Tunisia", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "SWE", "group": "F", "country": "Sweden", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "BEL", "group": "G", "country": "Belgium", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "IRN", "group": "G", "country": "Iran", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "EGY", "group": "G", "country": "Egypt", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "NZL", "group": "G", "country": "New Zealand", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "ESP", "group": "H", "country": "Spain", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "URU", "group": "H", "country": "Uruguay", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "KSA", "group": "H", "country": "Saudi Arabia", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "CPV", "group": "H", "country": "Cape Verde", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "FRA", "group": "I", "country": "France", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "SEN", "group": "I", "country": "Senegal", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "NOR", "group": "I", "country": "Norway", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "IRQ", "group": "I", "country": "Iraq", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "ARG", "group": "J", "country": "Argentina", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "AUT", "group": "J", "country": "Austria", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "ALG", "group": "J", "country": "Algeria", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "JOR", "group": "J", "country": "Jordan", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "POR", "group": "K", "country": "Portugal", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "COL", "group": "K", "country": "Colombia", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "UZB", "group": "K", "country": "Uzbekistan", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "COD", "group": "K", "country": "DR Congo", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "ENG", "group": "L", "country": "England", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "CRO", "group": "L", "country": "Croatia", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "PAN", "group": "L", "country": "Panama", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "GHA", "group": "L", "country": "Ghana", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "FWC", "group": "FWC", "country": "FWC", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}];
+const NAMES = {"ALG": ["Team Badge", "Team Badge", "Ramy Bensebaini", "Youcef Atal", "Rayan Aït-Nouri", "Mohamed Amine Tougai", "Aïssa Mandi", "Ismael Bennacer", "Houssem Aquar", "Hicham Boudaoui", "Ramiz Zerrouki", "Nabil Bentalab", "Team Photo", "Farés Chaibi", "Riyad Mahrez", "Said Benrahma", "Anis Hadj Moussa", "Amine Gouiri", "Baghdad Bounedjah", "Mohammed Amoura"], "ARG": ["Team Badge", "Team Badge", "Nahuel Molina", "Cristian Romero", "Nicolas Otamendi", "Nicolas Tagliafico", "Leonardo Balerdi", "Enzo Fernandez", "Alexis Mac Allister", "Rodrigo De Paul", "Exequiel Palacios", "Leandro Paredes", "Team Photo", "Nico Paz", "Franco Mastantuono", "Nico Gonzalez", "Lionel Messi", "Lautaro Martinez", "Julian Alvarez", "Giuliano Simeone"], "AUS": ["Team Badge", "Team Badge", "Joe Gauci", "Harry Souttar", "Alessandro Circati", "Jordan Bos", "Aziz Behich", "Cameron Burgess", "Lewis Miller", "Milos Degenek", "Jackson Irvine", "Riley McGree", "Team Photo", "Aiden O'Neill", "Connor Metcalfe", "Patrick Yazbek", "Craig Goodwin", "Kusini Vengi", "Nestory Irankunda", "Mohamed Touré"], "AUT": ["Team Badge", "Team Badge", "Patrick Pentz", "David Alaba", "Kevin Danso", "Philipp Lienhart", "Stefan Posch", "Phillipp Mwene", "Alexander Prass", "Xaver Schlager", "Marcel Sabitzer", "Konrad Laimer", "Team Photo", "Florian Grillitsch", "Nicolas Seiwald", "Romano Schmid", "Patrick Wimmer", "Christoph Baumgartner", "Michael Gregoritsch", "Marko Arnautović"], "BEL": ["Team Badge", "Team Badge", "Arthur Theate", "Timothy Castagne", "Zeno Debast", "Brandon Mechele", "Maxim De Cuyper", "Thomas Meunier", "Youri Tielemans", "Amadou Onana", "Nicolas Raskin", "Alexis Saelemaekers", "Team Photo", "Hans Vanaken", "Kevin De Bruyne", "Jérémy Doku", "Charles De Ketelaere", "Leandro Trossard", "Loïs Openda", "Romelu Lukaku"], "BIH": ["Team Badge", "Team Badge", "Amer Dedic", "Sead Kolasinac", "Tarik Muharemovic", "Nihad Mujakic", "Nikola Katic", "Amir Hadziahmetovic", "Benjamin Tahirovic", "Armin Gigovic", "Ivan Sunjic", "Ivan Basic", "Team Photo", "Dzenis Burnic", "Esmir Bajraktarevic", "Amar Memic", "Ermedin Demirovic", "Edin Dzeko", "Samed Bazdar", "Haris Tabakovic"], "BRA": ["Team Badge", "Team Badge", "Bento", "Marquinhos", "Éder Militão", "Gabriel Magalhães", "Danilo", "Wesley", "Lucas Paquetá", "Casemiro", "Bruno Guimarães", "Luiz Henrique", "Team Photo", "Vinicius Júnior", "Rodrygo", "João Pedro", "Matheus Cunha", "Gabriel Martinelli", "Raphinha", "Estévão"], "CAN": ["Team Badge", "Team Badge", "Alphonso Davies", "Alistair Johnston", "Samuel Adekugbe", "Riche Larvea", "Derek Cornelius", "Moïse Bombito", "Kamal Miller", "Stephen Eustáquio", "Ismaël Koné", "Jonathan Osorio", "Team Photo", "Jacob Shaffelburg", "Mathieu Choinière", "Niko Sigur", "Tajon Buchanan", "Liam Millar", "Cyle Larin", "Jonathan David"], "CIV": ["Team Badge", "Team Badge", "Ghislain Konan", "Wilfried Singo", "Odilon Kossounou", "Evan Ndicka", "Willy Boly", "Emmanuel Agbadou", "Ousmane Diomande", "Franck Kessie", "Seko Fofana", "Ibrahim Sangare", "Team Photo", "Jean-Philippe Gbamin", "Amad Diallo", "Sébastien Haller", "Simon Adingra", "Yan Diomande", "Evann Guessand", "Oumar Diakite"], "COD": ["Team Badge", "Team Badge", "Aaron Wan-Bissaka", "Axel Tuanzebe", "Arthur Masuaku", "Chancel Mbemba", "Joris Kayembe", "Charles Pickel", "Ngal'ayel Mukau", "Edo Kayembe", "Samuel Moutoussamy", "Noah Sadiki", "Team Photo", "Théo Bongonda", "Meschak Elia", "Yoane Wissa", "Brian Cipenga", "Fiston Mayele", "Cédric Bakambu", "Nathanaël Mbuku"], "COL": ["Team Badge", "Team Badge", "David Ospina", "Dávinson Sánchez", "Yerry Mina", "Daniel Munoz", "Johan Mojica", "Jhon Lucumí", "Santiago Arias", "Jefferson Lerma", "Kevin Castaño", "Richard Rios", "Team Photo", "James Rodriguez", "Juan Fernando Quintero", "Jorge Carrascal", "Jon Arias", "Jhon Cordova", "Luis Suarez", "Luis Diaz"], "CPV": ["Team Badge", "Team Badge", "Logan Costa", "Pico", "Diney", "Steven Moreira", "Wagner Pina", "Joao Paulo", "Yannick Semedo", "Kevin Pina", "Patrick Andrade", "Jamiro Monteiro", "Team Photo", "Deroy Duarte", "Garry Rodrigues", "Jovane Cabral", "Ryan Mendes", "Dailon Livramento", "Willy Semedo", "Bebe"], "CRO": ["Team Badge", "Team Badge", "Duje Caleta-Car", "Josko Gvardiol", "Josip Stanišić", "Luka Vušković", "Josip Sutalo", "Kristijan Jakic", "Luka Modrić", "Mateo Kovacic", "Martin Baturina", "Lovro Majer", "Team Photo", "Mario Pasalic", "Petar Sucic", "Ivan Perišić", "Marco Pasalic", "Ante Budimir", "Andrej Kramarić", "Franjo Ivanovic"], "CUW": ["Team Badge", "Team Badge", "Armando Obispo", "Sherel Floranus", "Jurien Gaari", "Joshua Brenet", "Roshon Van Eijma", "Shurandy Sambo", "Livano Comenencia", "Godfried Roemeratoe", "Juninho Bacuna", "Leandro Bacuna", "Team Photo", "Tahith Chong", "Kenji Gorre", "Jearl Margaritha", "Jurgen Locadia", "Jeremy Antonisse", "Gervane Kastaneer", "Sontje Hansen"], "CZE": ["Team Badge", "Team Badge", "Jindrich Stanek", "Ladislav Krejci", "Vladimir Coufal", "Jaroslav Zeleny", "Tomas Holes", "David Zima", "Michal Sadilek", "Lukas Provod", "Lukas Cerv", "Tomas Soucek", "Team Photo", "Pavel Sulc", "Matej Vydra", "Vasil Kusej", "Tomas Chory", "Vaclav Cerny", "Adam Hlozek", "Patrik Schick"], "ECU": ["Team Badge", "Team Badge", "Gonzalo Valle", "Piero Hincapié", "Pervis Estupiñán", "Willian Pacho", "Ángelo Preciado", "Joel Ordóñez", "Moises Caicedo", "Alan Franco", "Kendry Paez", "Pedro Vite", "Team Photo", "John Veboah", "Leonardo Campana", "Gonzalo Plata", "Nilson Angulo", "Alan Minda", "Kevin Rodriguez", "Enner Valencia"], "EGY": ["Team Badge", "Team Badge", "Mohamed Hany", "Mohamed Hamdy", "Yasser Ibrahim", "Khaled Sobhi", "Ramy Rabia", "Hossam Abdelmaguid", "Ahmed Fatouh", "Marwan Attia", "Zizo", "Hamdy Fathy", "Team Photo", "Mohamed Lasheen", "Emam Ashour", "Osama Faisal", "Mohamed Salah", "Mostafa Mohamed", "Trezeguet", "Omar Marmoush"], "ENG": ["Team Badge", "Team Badge", "John Stones", "Marc Guéhi", "Ezri Konsa", "Trent Alexander-Arnold", "Reece James", "Dan Burn", "Jordan Henderson", "Declan Rice", "Jude Bellingham", "Cole Palmer", "Team Photo", "Morgan Rogers", "Anthony Gordon", "Phil Foden", "Bukayo Saka", "Harry Kane", "Marcus Rashford", "Ollie Watkins"], "ESP": ["Team Badge", "Team Badge", "Robin Le Normand", "Aymeric Laporte", "Dean Huijsen", "Pedro Porro", "Dani Carvajal", "Marc Cucurella", "Martín Zubimendi", "Rodri", "Pedri", "Fabian Ruiz", "Team Photo", "Mikel Merino", "Lamine Yamal", "Dani Olmo", "Nico Williams", "Ferran Torres", "Álvaro Morata", "Mikel Oyarzabal"], "FRA": ["Team Badge", "Team Badge", "Theo Hernandez", "William Saliba", "Jules Kounde", "Ibrahima Konate", "Dayot Upamecano", "Lucas Digne", "Aurélien Tchouaméni", "Eduardo Camavinga", "Manu Kone", "Adrien Rabiot", "Team Photo", "Michael Olise", "Ousmane Dembele", "Bradley Barcola", "Désiré Doué", "Kingsley Coman", "Hugo Ekitike", "Kylian Mbappe"], "FWC": ["Official Emblem", "Official Emblem", "Official Mascots", "Official Slogan", "Official Ball", "Canada", "Mexico", "USA", "Italy 1934", "Uruguay 1950", "West Germany 1954", "Brazil 1962", "West Germany 1974", "Argentina 1986", "Brazil 1994", "Brazil 2002", "Italy 2006", "Germany 2014", "Argentina 2022", "Panini Logo"], "GER": ["Team Badge", "Team Badge", "Jonathan Tah", "David Raum", "Nico Schlotterbeck", "Antonio Rüdiger", "Waldemar Anton", "Ridle Baku", "Maximilian Mittelstadt", "Joshua Kimmich", "Florian Wirtz", "Felix Nmecha", "Team Photo", "Leon Goretzka", "Jamal Musiala", "Serge Gnabry", "Kai Havertz", "Leroy Sane", "Karim Adeyemi", "Nick Woltemade"], "GHA": ["Team Badge", "Team Badge", "Tariq Lamptey", "Mohammed Salisu", "Alidu Seidu", "Alexander Djiku", "Gideon Mensah", "Caleb Yirenkyi", "Abdul Issahaku Fatawu", "Thomas Partey", "Salis Abdul Samed", "Kamaldeen Sulemana", "Team Photo", "Mohammed Kudus", "Inaki Williams", "Jordan Ayew", "Andrew Ayew", "Joseph Paintsil", "Osman Bukari", "Antoine Semenyo"], "HAI": ["Team Badge", "Team Badge", "Carlens Arcus", "Martin Expérience", "Jean-Kevin Duverne", "Ricardo Adé", "Duke Lacroix", "Garven Metusala", "Hannes Delcroix", "Leverton Pierre", "Danley Jean Jacques", "Jean-Ricner Bellegarde", "Team Photo", "Christopher Attys", "Derrick Etienne Jr", "Josue Casimir", "Ruben Providence", "Duckens Nazon", "Louicius Deedson", "Frantzdy Pierrot"], "IRN": ["Team Badge", "Team Badge", "Morteza Pouraliganji", "Ehsan Hajsafi", "Milad Mohammadi", "Shojae Khalilzadeh", "Ramin Rezaeian", "Hossein Kanaani", "Sadegh Moharrami", "Saleh Hardani", "Saeed Ezatolahi", "Saman Ghoddos", "Team Photo", "Omid Noorafkan", "Roozbeh Cheshmi", "Mohammad Mohebi", "Sardar Azmoun", "Mehdi Taremi", "Alireza Jahanbakhsh", "Ali Gholizadeh"], "IRQ": ["Team Badge", "Team Badge", "Rebin Sulaka", "Hussein Ali", "Akam Hashem", "Merchas Doski", "Zaid Tahseen", "Manaf Younis", "Zidane Iqbal", "Amir Al-Ammari", "Ibrahim Bavesh", "Ali Jasim", "Team Photo", "Youssef Amyn", "Aimar Sher", "Marko Farji", "Osama Rashid", "Ali Al-Hamadi", "Aymen Hussein", "Mohanad Ali"], "JOR": ["Team Badge", "Team Badge", "Ihsan Haddad", "Mohammad Abu Hashish", "Yazan Al-Arab", "Abdallah Nasib", "Saleem Obaid", "Mohammad Abualnadi", "Ibrahim Saadeh", "Nizar Al-Rashdan", "Noor Al-Rawabdeh", "Mohannad Abu Taha", "Team Photo", "Amer Jamous", "Musa Al-Taamari", "Yazan Al-Naimat", "Mahmoud Al-Mardi", "Ali Olwan", "Mohammad Abu Zrayq", "Ibrahim Sabra"], "JPN": ["Team Badge", "Team Badge", "Henry Heroki Mochizuki", "Ayumu Seko", "Junnosuke Suzuki", "Shogo Taniguchi", "Tsuyoshi Watanabe", "Kaishu Sano", "Yuki Soma", "Ao Tanaka", "Daichi Kamada", "Takefusa Kubo", "Team Photo", "Ritsu Doan", "Keito Nakamura", "Takumi Minamino", "Shuto Machino", "Junya Ito", "Koki Ogawa", "Ayase Ueda"], "KOR": ["Team Badge", "Team Badge", "Seung-Gyu Kim", "Min-jae Kim", "Yu-min Cho", "Young-woo Seol", "Han-beom Lee", "Tae-seok Lee", "Myung-jae Lee", "Jae-sung Lee", "In-beom Hwang", "Kang-in Lee", "Team Photo", "Seung-ho Paik", "Jens Castrop", "Dongg-yeong Lee", "Gue-sung Cho", "Heung-min Son", "Hee-chan Hwang", "Hyeon-Gyu Oh"], "KSA": ["Team Badge", "Team Badge", "Abdulrahman Al-Sanbi", "Saud Abdulhamid", "Nawaf Bouwashl", "Jihad Thakri", "Moteb Al-Harbi", "Hassan Altambakti", "Musab Aljuwayr", "Ziyad Aljohani", "Abdullah Alkhaibari", "Nasser Aldawsari", "Team Photo", "Saleh Abu Alshamat", "Marwan Alsahafi", "Salem Aldawsari", "Abdulrahman Al-Aboud", "Feras Akbrikan", "Saleh Alshehri", "Abdullah Al-Hamdan"], "MAR": ["Team Badge", "Team Badge", "Munir El Kajoui", "Achraf Hakimi", "Noussair Mazraoui", "Nayef Aguerd", "Roman Saiss", "Jawad El Yamio", "Adam Masina", "Sofyan Amrabat", "Azzedine Ounahi", "Eliesse Ben Seghir", "Team Photo", "Bilal El Khannouss", "Ismael Saibari", "Youssef En-Nesyri", "Abde Ezzalzouli", "Soufiane Rahimi", "Brahim Diaz", "Ayoub El Kaabi"], "MEX": ["Team Badge", "Team Badge", "Johan Vasquez", "Jorge Sánchez", "Cesar Montes", "Jesus Gallardo", "Israel Reyes", "Diego Lainez", "Carlos Rodriguez", "Edson Alvarez", "Orbelin Pineda", "Marcel Ruiz", "Team Photo", "Érick Sánchez", "Hirving Lozano", "Santiago Giménez", "Raúl Jiménez", "Alexis Vega", "Roberto Alvarado", "Cesar Huerta"], "NED": ["Team Badge", "Team Badge", "Virgil van Dijk", "Micky van de Ven", "Jurrien Timber", "Denzel Dumfries", "Nathan Aké", "Jeremie Frimpong", "Jan Paul van Hecke", "Tijjani Reijnders", "Ryan Gravenberch", "Teun Koopmeiners", "Team Photo", "Frenkie de Jong", "Xavi Simons", "Justin Kluivert", "Memphis Depay", "Donyell Malen", "Wout Weghorst", "Cody Gakpo"], "NOR": ["Team Badge", "Team Badge", "Julian Ryerson", "Leo Ostigård", "Kristoffer Vassbakk Ajer", "Marcus Holmgren Pedersen", "David Møller Wolfe", "Torbjørn Heggem", "Morten Thorsby", "Martin Ødegaard", "Sander Berge", "Andreas Schjelderup", "Team Photo", "Patrick Berg", "Erling Haaland", "Alexander Sørloth", "Aron Dønnum", "Jorgen Strand Larsen", "Antonio Nusa", "Oscar Bobb"], "NZL": ["Team Badge", "Team Badge", "Alex Paulsen", "Michael Boxall", "Liberato Cacace", "Tim Payne", "Tyler Bindon", "Francis de Vries", "Finn Surman", "Joe Bell", "Sarpreet Singh", "Ryan Thomas", "Team Photo", "Matthew Garbett", "Marko Stamenić", "Ben Old", "Chris Wood", "Elijah Just", "Callum McCowatt", "Kosta Barbarouses"], "PAN": ["Team Badge", "Team Badge", "Luis Mejia", "Fidel Escobar", "Andres Andrade", "Michael Amir Murillo", "Eric Davis", "Jose Cordoba", "Cesar Blackman", "Cristian Martinez", "Aníbal Godoy", "Adalberto Carrasquilla", "Team Photo", "Édgar Bárcenas", "Carlos Harvey", "Ismael Díaz", "Jose Fajardo", "Cecilio Waterman", "Jose Luiz Rodriguez", "Alberto Quintero"], "PAR": ["Team Badge", "Team Badge", "Orlando Gill", "Gustavo Gomez", "Fabián Balbuena", "Juan José Cáceres", "Omar Alderete", "Junior Alonso", "Mathías Villasanti", "Diego Gomez", "Damián Bobadilla", "Andres Cubas", "Team Photo", "Matias Galarza Fonda", "Julio Enciso", "Alejandro Romero Gamarra", "Miguel Almirón", "Ramon Sosa", "Angel Romero", "Antonio Sanabria"], "POR": ["Team Badge", "Team Badge", "Jose Sa", "Ruben Dias", "João Cancelo", "Diogo Dalot", "Nuno Mendes", "Gonçalo Inácio", "Bernardo Silva", "Bruno Fernandes", "Ruben Neves", "Vitinha", "Team Photo", "João Neves", "Cristiano Ronaldo", "Francisco Trincao", "João Felix", "Gonçalo Ramos", "Pedro Neto", "Rafael Leão"], "QAT": ["Team Badge", "Team Badge", "Sultan Albrake", "Lucas Mendes", "Homam Ahmed", "Boualem Khoukhi", "Pedro Miguel", "Tarek Salman", "Mohamed Al-Mannai", "Karim Boudiaf", "Assim Madibo", "Ahmed Fatehi", "Team Photo", "Mohammed Waad", "Abdulaziz Hatem", "Hassan Al-Haydos", "Edmilson Junior", "Akram Hassan Afif", "Ahmed Al Ganehi", "Almoez Ali"], "RSA": ["Team Badge", "Team Badge", "Sipho Chaine", "Aubrey Modiba", "Samukele Kabini", "Mbekezeli Mbokazi", "Khulumani Ndamane", "Siyabonga Ngezana", "Khuliso Mudau", "Nkosinathi Sibisi", "Teboho Mokoena", "Thalente Mbatha", "Team Photo", "Bathasi Aubaas", "Yaya Sithole", "Sipho Mbule", "Lyle Foster", "Iqraam Rayners", "Mohau Nkota", "Oswin Appollis"], "SCO": ["Team Badge", "Team Badge", "Jack Hendry", "Kieran Tierney", "Aaron Hickey", "Andrew Robertson", "Scott McKenna", "John Souttar", "Anthony Ralston", "Grant Hanley", "Scott McTominay", "Billy Gilmour", "Team Photo", "Lewis Ferguson", "Ryan Christie", "Kenny McLean", "John McGinn", "Lyndon Dykes", "Che Adams", "Ben Gannon-Doak"], "SEN": ["Team Badge", "Team Badge", "Yehvann Diouf", "Moussa Niakhaté", "Abdoulaye Seck", "Ismail Jakobs", "El Hadji Malick Diouf", "Kalidou Koulibaly", "Idrissa Gana Gueye", "Pape Matar Sarr", "Pape Gueye", "Habib Diarra", "Team Photo", "Lamine Camara", "Sadio Mane", "Ismaïla Sarr", "Boulaye Dia", "Iliman Ndiaye", "Nicolas Jackson", "Krepin Diatta"], "SUI": ["Team Badge", "Team Badge", "Yvon Mvogo", "Manuel Akanji", "Ricardo Rodriguez", "Nico Elvedi", "Aurèle Amenda", "Silvan Widmer", "Granit Xhaka", "Denis Zakaria", "Remo Freuler", "Fabian Rieder", "Team Photo", "Ardon Jashari", "Johan Manzambi", "Michel Aebischer", "Breel Embolo", "Ruben Vargas", "Dan Ndoye", "Zeki Amdouni"], "SWE": ["Team Badge", "Team Badge", "Isak Hien", "Gabriel Gudmundsson", "Emil Holm", "Victor Nilsson Lindelöf", "Gustaf Lagerbielke", "Lucas Bergvall", "Hugo Larsson", "Jesper Karlström", "Yasin Ayari", "Mattias Svanberg", "Team Photo", "Daniel Svensson", "Ken Sema", "Roony Bardghji", "Dejan Kulusevski", "Anthony Elanga", "Alexander Isak", "Viktor Gyökeres"], "TUN": ["Team Badge", "Team Badge", "Aymen Dahmen", "Yan Valery", "Montassar Talbi", "Yassine Meriah", "Ali Abdi", "Dylan Bronn", "Ellyes Skhiri", "Aissa Laidouni", "Ferjani Sassi", "Mohamed Ali Ben Romdhane", "Team Photo", "Hannibal Mejbri", "Elias Achouri", "Elias Saad", "Hazem Mastouri", "Ismael Gharbi", "Sayfallah Ltaief", "Naim Sliti"], "TUR": ["Team Badge", "Team Badge", "Mert Muldur", "Zeki Celik", "Abdulkerim Bardakci", "Caglar Soyuncu", "Merih Demiral", "Ferdi Kadioglu", "Kaan Ayhan", "Ismail Yuksek", "Hakan Calhanoglu", "Orkun Kokcu", "Team Photo", "Arda Guler", "Irfan Can Kahveci", "Yunus Akgun", "Can Uzun", "Baris Alper Yilmaz", "Kerem Akturkoglu", "Kenan Yildiz"], "URU": ["Team Badge", "Team Badge", "Santiago Mele", "Ronald Araujo", "José María Giménez", "Sebastian Caceres", "Mathias Olivera", "Guillermo Varela", "Nahitan Nandez", "Federico Valverde", "Giorgian De Arrascaeta", "Rodrigo Bentancur", "Team Photo", "Manuel Ugarte", "Nicolás de la Cruz", "Maxi Araujo", "Darwin Núñez", "Federico Viñas", "Rodrigo Aguirre", "Facundo Pellistri"], "USA": ["Team Badge", "Team Badge", "Chris Richards", "Tim Ream", "Mark McKenzie", "Alex Freeman", "Antonee Robinson", "Tyler Adams", "Tanner Tessmann", "Weston McKenny", "Christian Roldan", "Timothy Weah", "Team Photo", "Diego Luna", "Malik Tillman", "Christian Pulisic", "Brenden Aaronson", "Ricardo Pepi", "Haji Wright", "Folarin Balogun"], "UZB": ["Team Badge", "Team Badge", "Farrukh Savfiev", "Sherzod Nasrullaev", "Umar Eshmurodov", "Husniddin Aliqulov", "Rustamjon Ashurmatov", "Khojiakbar Alijonov", "Abdukodir Khusanov", "Odiljon Hamrobekov", "Otabek Shukurov", "Jamshid Iskanderov", "Team Photo", "Azizbek Turgunboev", "Khojimat Erkinov", "Eldor Shomurodov", "Oston Urunov", "Jaloliddin Masharipov", "Igor Sergeev", "Abbosbek Fayzullaev"]};
+const FOILS = {"FWC": [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true], "ALG": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "ARG": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "AUS": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "AUT": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "BEL": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "BIH": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "BRA": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "CAN": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "CIV": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "COD": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "COL": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "CPV": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "CRO": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "CUW": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "CZE": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "ECU": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "EGY": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "ENG": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "ESP": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "FRA": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "GER": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "GHA": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "HAI": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "IRN": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "IRQ": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "JOR": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "JPN": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "KOR": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "KSA": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "MAR": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "MEX": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "NED": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "NOR": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "NZL": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "PAN": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "PAR": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "POR": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "QAT": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "RSA": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "SCO": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "SEN": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "SUI": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "SWE": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "TUN": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "TUR": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "URU": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "USA": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "UZB": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false]};
+const STORAGE_KEY = "fwc_mockup_v3";
+const GROUPS_ORDER = ["A","B","C","D","E","F","G","H","I","J","K","L","FWC"];
+
+const ISO2 = {
+  MEX:"MX", KOR:"KR", RSA:"ZA", CZE:"CZ",
+  CAN:"CA", SUI:"CH", QAT:"QA", BIH:"BA",
+  BRA:"BR", MAR:"MA", SCO:"GB-SCT", HAI:"HT",
+  USA:"US", PAR:"PY", AUS:"AU", TUR:"TR",
+  GER:"DE", ECU:"EC", CIV:"CI", CUW:"CW",
+  NED:"NL", JPN:"JP", TUN:"TN", SWE:"SE",
+  BEL:"BE", IRN:"IR", EGY:"EG", NZL:"NZ",
+  ESP:"ES", URU:"UY", KSA:"SA", CPV:"CV",
+  FRA:"FR", SEN:"SN", NOR:"NO", IRQ:"IQ",
+  ARG:"AR", AUT:"AT", ALG:"DZ", JOR:"JO",
+  POR:"PT", COL:"CO", UZB:"UZ", COD:"CD",
+  ENG:"GB-ENG", CRO:"HR", PAN:"PA", GHA:"GH",
+  FWC:"FWC"
+};
+function flagFor(code) {
+  const iso = ISO2[code];
+  if (!iso) return "🏳️";
+  if (iso === "GB-ENG") return "🏴\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}";
+  if (iso === "GB-SCT") return "🏴\u{E0067}\u{E0062}\u{E0073}\u{E0063}\u{E0074}\u{E007F}";
+  if (iso === "FWC") return "🏆";
+  const A = 0x1F1E6;
+  return String.fromCodePoint(A + iso.charCodeAt(0) - 65, A + iso.charCodeAt(1) - 65);
+}
+
+let data = loadData();
+let view = "home";
+let activeCode = null;
+let activeGroup = "A";
+
+function loadData() {
+  try {
+    const cached = localStorage.getItem(STORAGE_KEY);
+    if (cached) return JSON.parse(cached);
+  } catch(e) {}
+  return JSON.parse(JSON.stringify(ORIGINAL));
+}
+function saveData() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+
+function totals() {
+  let owned = 0, dupes = 0, miss = 0;
+  for (const c of data) for (const v of c.counts) {
+    if (v === 0) miss++;
+    else { owned++; if (v >= 2) dupes += v - 1; }
+  }
+  return { owned, dupes, miss, total: data.reduce((s,c)=>s+c.counts.length,0) };
+}
+function countryStats(code) {
+  const c = data.find(d => d.code === code);
+  if (!c) return { owned: 0, dupes: 0 };
+  let owned = 0, dupes = 0;
+  for (const v of c.counts) {
+    if (v >= 1) owned++;
+    if (v >= 2) dupes += v - 1;
+  }
+  return { owned, dupes };
+}
+function groupStats(group) {
+  const list = data.filter(d => d.group === group);
+  let owned = 0, total = 0;
+  for (const c of list) for (const v of c.counts) { total++; if (v >= 1) owned++; }
+  return { owned, total };
+}
+function barColor(owned, total) {
+  const pct = total ? (owned / total) * 100 : 0;
+  if (pct <= 25) return "var(--lvl-red)";
+  if (pct <= 50) return "var(--lvl-orange)";
+  if (pct <= 75) return "var(--lvl-yellow)";
+  return "var(--ok)";
+}
+
+/* ===== TOP BAR ===== */
+function renderTopbar() {
+  const t = totals();
+  document.getElementById("owned-count").textContent = t.owned;
+  document.getElementById("total-count").textContent = t.total;
+  document.getElementById("ok-count").textContent = t.owned - t.dupes;
+  document.getElementById("dupes-count").textContent = t.dupes;
+  document.getElementById("miss-count").textContent = t.miss;
+  const pct = t.total ? Math.round((t.owned / t.total) * 100) : 0;
+  document.getElementById("progress-pct").textContent = pct + "%";
+  const pbar = document.getElementById("progress-bar");
+  pbar.style.width = pct + "%";
+  pbar.style.background = barColor(t.owned, t.total);
+
+  const back = document.getElementById("back-btn");
+  const title = document.getElementById("top-title");
+  if (view === "country") {
+    back.classList.remove("hidden");
+  } else {
+    back.classList.add("hidden");
+  }
+  title.textContent = "Figurinhas Copa 2026";
+}
+
+/* ===== HOME (2-col group cards) ===== */
+function renderHome() {
+  const grid = document.getElementById("home-grid");
+  grid.innerHTML = "";
+  for (const g of GROUPS_ORDER) {
+    const list = data.filter(d => d.group === g);
+    if (list.length === 0) continue;
+    const gs = groupStats(g);
+    const pct = gs.total ? (gs.owned / gs.total) * 100 : 0;
+    const head = list[0];
+
+    const card = document.createElement("div");
+    card.className = "group-card" + (gs.owned === gs.total ? " complete" : "");
+
+    const rows = list.map(c => {
+      const cs = countryStats(c.code);
+      const cpct = (cs.owned / 20) * 100;
+      const ccolor = barColor(cs.owned, 20);
+      return `
+        <div class="gc-row">
+          <span class="gc-flag">${flagFor(c.code)}</span>
+          <span class="gc-code">${c.code}</span>
+          <span class="gc-pbar"><div style="width:${cpct}%; background:${ccolor};"></div></span>
+          <span class="gc-dupes">${cs.dupes ? cs.dupes : ""}</span>
+        </div>
+      `;
+    }).join("");
+
+    card.innerHTML = `
+      <div class="gc-head">
+        <span class="gc-name">${g === "FWC" ? "FWC" : "Group " + g}</span>
+        <span class="gc-count">${gs.owned}/${gs.total}</span>
+      </div>
+      <div class="gc-bar"><div style="width:${pct}%; background:${barColor(gs.owned, gs.total)};"></div></div>
+      <div class="gc-list">${rows}</div>
+    `;
+    card.onclick = () => goToCountry(head.code);
+    grid.appendChild(card);
+  }
+}
+
+/* ===== COUNTRY ===== */
+function renderGroupTabs() {
+  const el = document.getElementById("group-tabs");
+  el.innerHTML = "";
+  for (const g of GROUPS_ORDER) {
+    const b = document.createElement("button");
+    b.className = "group-tab" + (g === activeGroup ? " active" : "");
+    b.textContent = g;
+    b.onclick = () => {
+      activeGroup = g;
+      const first = data.find(d => d.group === g);
+      if (first) activeCode = first.code;
+      renderCountryView();
+    };
+    el.appendChild(b);
+  }
+}
+function renderCountryPills() {
+  const el = document.getElementById("country-pills");
+  el.innerHTML = "";
+  const list = data.filter(d => d.group === activeGroup);
+  const span = list.length === 1 ? " span-2" : "";
+  for (const c of list) {
+    const stats = countryStats(c.code);
+    const pct = (stats.owned / 20) * 100;
+    const color = barColor(stats.owned, 20);
+    const pill = document.createElement("div");
+    pill.className = "country-pill" + span + (c.code === activeCode ? " active" : "");
+    const dupesHtml = stats.dupes ? ` · <span class="meta-dupes">${stats.dupes}</span>` : "";
+    pill.innerHTML = `
+      <div class="pill-name">${c.code}</div>
+      <div class="pill-meta">${c.country} · <span class="meta-owned" style="color:${color}">${stats.owned}</span>${dupesHtml}</div>
+      <div class="pill-bar"><div style="width:${pct}%; background:${color};"></div></div>
+    `;
+    pill.onclick = () => { activeCode = c.code; renderCountryView(); };
+    el.appendChild(pill);
+  }
+}
+function renderGrid() {
+  const c = data.find(d => d.code === activeCode);
+  if (!c) return;
+  const stats = countryStats(c.code);
+  document.getElementById("country-name").textContent = `${c.country} (${c.code})`;
+  document.getElementById("country-meta").textContent =
+    `${stats.owned} / 20${stats.dupes ? ` · ${stats.dupes} dupes` : ""}`;
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+  for (let i = 0; i < c.counts.length; i++) {
+    grid.appendChild(buildTile(c, i));
+  }
+}
+function renderCountryView() {
+  renderGroupTabs();
+  renderCountryPills();
+  renderGrid();
+}
+
+function buildTile(country, idx) {
+  const tile = document.createElement("div");
+  tile.dataset.idx = idx;
+  paintTile(tile, country, idx);
+  attachTileHandlers(tile, country, idx);
+  return tile;
+}
+function paintTile(tile, country, idx) {
+  const v = country.counts[idx];
+  let cls = "tile";
+  if (v === 1) cls += " ok";
+  else if (v >= 2) cls += " trade";
+  const isFoil = (FOILS[country.code] || [])[idx];
+  if (isFoil) cls += v === 0 ? " foil foil-miss" : " foil foil-owned";
+  tile.className = cls;
+  const arr = NAMES[country.code] || [];
+  const name = arr[idx] || "—";
+  tile.innerHTML = `
+    <div class="id">${country.code}${idx + 1}</div>
+    <div class="name">${name}</div>
+    ${v >= 2 ? `<span class="badge">+${v - 1}</span>` : ""}
+  `;
+}
+function attachTileHandlers(tile, country, idx) {
+  let pressTimer = null;
+  let longPressed = false;
+  let pointerId = null;
+
+  tile.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    pointerId = e.pointerId;
+    longPressed = false;
+    tile.setPointerCapture(pointerId);
+    pressTimer = setTimeout(() => {
+      longPressed = true;
+      decrement(country, idx, tile);
+      if (navigator.vibrate) navigator.vibrate(20);
+    }, 450);
+  });
+  tile.addEventListener("pointerup", e => {
+    clearTimeout(pressTimer);
+    if (pointerId !== null && tile.hasPointerCapture(pointerId)) tile.releasePointerCapture(pointerId);
+    pointerId = null;
+    if (!longPressed) increment(country, idx, tile);
+  });
+  tile.addEventListener("pointercancel", () => { clearTimeout(pressTimer); });
+  tile.addEventListener("contextmenu", e => e.preventDefault());
+}
+
+function increment(country, idx, tile) {
+  country.counts[idx] += 1;
+  saveData();
+  paintTile(tile, country, idx);
+  refreshAfterTileChange(country.code);
+}
+function decrement(country, idx, tile) {
+  if (country.counts[idx] > 0) country.counts[idx] -= 1;
+  saveData();
+  paintTile(tile, country, idx);
+  refreshAfterTileChange(country.code);
+}
+function refreshAfterTileChange(code) {
+  renderTopbar();
+  // update country pill stats and the country header (cheap)
+  renderCountryPills();
+  const c = data.find(d => d.code === code);
+  const stats = countryStats(code);
+  document.getElementById("country-meta").textContent =
+    `${stats.owned} / 20${stats.dupes ? ` · ${stats.dupes} dupes` : ""}`;
+}
+
+
+function getTradeItems() {
+  const items = [];
+  for (const c of data) {
+    for (let i = 0; i < c.counts.length; i++) {
+      if (c.counts[i] >= 2) {
+        items.push({
+          code: c.code, group: c.group, country: c.country,
+          idx: i, dupes: c.counts[i] - 1,
+          name: (NAMES[c.code] || [])[i] || "—",
+          foil: ((FOILS[c.code] || [])[i]) || false
+        });
+      }
+    }
+  }
+  return items;
+}
+function renderTrade() {
+  const screen = document.getElementById("trade");
+  const items = getTradeItems();
+  const totalDupes = items.reduce((s, x) => s + x.dupes, 0);
+  let html = `
+    <div class="trade-summary">
+      <span class="ts-num">${totalDupes}</span>
+      <span class="ts-label">dupe${totalDupes === 1 ? "" : "s"} ready to swap</span>
+    </div>
+  `;
+  if (items.length === 0) {
+    html += `<div class="trade-empty">No dupes yet — once you collect a sticker you already own, it shows up here.</div>`;
+    screen.innerHTML = html;
+    return;
+  }
+  const byGroup = {};
+  for (const it of items) (byGroup[it.group] = byGroup[it.group] || []).push(it);
+  for (const g of GROUPS_ORDER) {
+    const list = byGroup[g];
+    if (!list || list.length === 0) continue;
+    const groupDupes = list.reduce((s, x) => s + x.dupes, 0);
+    const groupLabel = g === "FWC" ? "FWC" : "Group " + g;
+    let rows = "";
+    for (const it of list) {
+      const star = it.foil ? '<span class="tr-foil">★</span>' : '';
+      rows += `
+        <div class="trade-row-wrap">
+          <div class="trade-row-action">−1</div>
+          <div class="trade-row" data-code="${it.code}" data-idx="${it.idx}">
+            <div class="tr-code">${star}${it.code}${it.idx + 1}</div>
+            <div class="tr-info">
+              <div class="tr-name">${it.name}</div>
+              <div class="tr-country">${it.country}</div>
+            </div>
+            <span class="tr-count">×${it.dupes}</span>
+          </div>
+        </div>
+      `;
+    }
+    html += `
+      <div class="trade-group">
+        <div class="trade-group-header">
+          <span>${groupLabel}</span>
+          <span class="tgh-count">×${groupDupes}</span>
+        </div>
+        <div class="trade-list">${rows}</div>
+      </div>
+    `;
+  }
+  screen.innerHTML = html;
+  for (const row of screen.querySelectorAll(".trade-row")) {
+    attachTradeSwipe(row);
+  }
+}
+function decrementByCode(code, idx) {
+  const c = data.find(d => d.code === code);
+  if (!c) return;
+  if (c.counts[idx] > 0) c.counts[idx] -= 1;
+  saveData();
+}
+function attachTradeSwipe(row) {
+  const code = row.dataset.code;
+  const idx = parseInt(row.dataset.idx, 10);
+  let startX = 0, startY = 0, active = false, decided = false, horizontal = false, dx = 0;
+  const THRESHOLD = 60, MAX = 120;
+  row.addEventListener("pointerdown", e => {
+    active = true; decided = false; horizontal = false; dx = 0;
+    startX = e.clientX; startY = e.clientY;
+    row.style.transition = "none";
+  });
+  row.addEventListener("pointermove", e => {
+    if (!active) return;
+    dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    if (!decided && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
+      decided = true;
+      horizontal = Math.abs(dx) > Math.abs(dy);
+      if (horizontal) { try { row.setPointerCapture(e.pointerId); } catch (_) {} }
+    }
+    if (horizontal && dx < 0) {
+      e.preventDefault();
+      row.style.transform = "translateX(" + Math.max(dx, -MAX) + "px)";
+    }
+  });
+  function finish() {
+    if (!active) return;
+    active = false;
+    row.style.transition = "transform 0.18s ease";
+    if (horizontal && dx <= -THRESHOLD) {
+      row.style.transform = "translateX(-100%)";
+      if (navigator.vibrate) navigator.vibrate(20);
+      setTimeout(() => { decrementByCode(code, idx); renderTrade(); renderTopbar(); }, 160);
+    } else {
+      row.style.transform = "translateX(0)";
+    }
+  }
+  row.addEventListener("pointerup", finish);
+  row.addEventListener("pointercancel", finish);
+}
+
+
+function buildPerCountryStats() {
+  return data.map(c => {
+    let owned = 0, dupes = 0;
+    for (const v of c.counts) { if (v >= 1) owned++; if (v >= 2) dupes += v - 1; }
+    return { code: c.code, country: c.country, group: c.group, owned, dupes, total: c.counts.length };
+  });
+}
+function foilStats() {
+  let owned = 0, total = 0, dupes = 0;
+  for (const c of data) {
+    const cf = FOILS[c.code] || [];
+    for (let i = 0; i < c.counts.length; i++) {
+      if (!cf[i]) continue;
+      total++;
+      if (c.counts[i] >= 1) owned++;
+      if (c.counts[i] >= 2) dupes += c.counts[i] - 1;
+    }
+  }
+  return { owned, total, dupes };
+}
+function statsRow(c, statHtml, extraClass) {
+  return `
+    <div class="stats-row ${extraClass || ""}" data-code="${c.code}">
+      <span class="sr-flag">${flagFor(c.code)}</span>
+      <span class="sr-code">${c.code}</span>
+      <span class="sr-name">${c.country}</span>
+      <span class="sr-stat">${statHtml}</span>
+    </div>
+  `;
+}
+function renderStats() {
+  const screen = document.getElementById("stats");
+  const t = totals();
+  const pct = t.total ? Math.round((t.owned / t.total) * 100) : 0;
+  const color = barColor(t.owned, t.total);
+  const per = buildPerCountryStats();
+  const completedCount = per.filter(c => c.owned === c.total).length;
+  const f = foilStats();
+  const fpct = f.total ? Math.round((f.owned / f.total) * 100) : 0;
+
+  const almost = per.filter(c => c.owned >= 16 && c.owned < 20)
+                    .sort((a,b) => b.owned - a.owned);
+  const need = per.filter(c => c.owned <= 5)
+                  .sort((a,b) => a.owned - b.owned);
+  const dupes = per.filter(c => c.dupes > 0)
+                   .sort((a,b) => b.dupes - a.dupes)
+                   .slice(0, 8);
+
+  const okCount = t.owned - t.dupes;
+
+  let html = `
+    <div class="stats-hero">
+      <div class="sh-row">
+        <span class="sh-num">${pct}%</span>
+        <span class="sh-pct">${t.owned} / ${t.total}</span>
+      </div>
+      <div class="sh-sub">${completedCount} of ${per.length} countries complete</div>
+      <div class="sh-bar"><div style="width:${pct}%; background:${color};"></div></div>
+    </div>
+    <div class="stats-quad">
+      <div class="stat-card">
+        <div class="sc-num">${okCount}</div>
+        <div class="sc-label">unique owned</div>
+      </div>
+      <div class="stat-card miss">
+        <div class="sc-num">${t.miss}</div>
+        <div class="sc-label">missing</div>
+      </div>
+      <div class="stat-card foils">
+        <div class="sc-num">${f.owned}<span class="sc-sub"> / ${f.total}</span></div>
+        <div class="sc-label">foils owned (${fpct}%)</div>
+      </div>
+      <div class="stat-card dupes">
+        <div class="sc-num">${t.dupes}</div>
+        <div class="sc-label">dupes total</div>
+      </div>
+    </div>
+  `;
+
+  // Almost there
+  html += `
+    <div class="stats-section">
+      <div class="stats-section-title">
+        <span>Almost there</span>
+        <span class="sst-hint">${almost.length} ${almost.length === 1 ? "country" : "countries"} ≥ 16/20</span>
+      </div>
+      <div class="stats-list">
+  `;
+  if (almost.length === 0) {
+    html += `<div class="stats-empty">No country at 16+/20 yet — keep going.</div>`;
+  } else {
+    for (const c of almost) {
+      const remaining = c.total - c.owned;
+      html += statsRow(c, `${c.owned}/${c.total} <span style="color:var(--muted); font-weight:500; font-size:11px;">· ${remaining} left</span>`);
+    }
+  }
+  html += `</div></div>`;
+
+  // Need work
+  html += `
+    <div class="stats-section">
+      <div class="stats-section-title">
+        <span>Need work</span>
+        <span class="sst-hint">${need.length} ${need.length === 1 ? "country" : "countries"} ≤ 5/20</span>
+      </div>
+      <div class="stats-list">
+  `;
+  if (need.length === 0) {
+    html += `<div class="stats-empty">Nothing in the red — nice.</div>`;
+  } else {
+    for (const c of need) {
+      html += statsRow(c, `<span style="color:var(--lvl-red);">${c.owned}</span>/${c.total}`);
+    }
+  }
+  html += `</div></div>`;
+
+  // Most dupes
+  html += `
+    <div class="stats-section">
+      <div class="stats-section-title">
+        <span>Most dupes</span>
+        <span class="sst-hint">trade leverage</span>
+      </div>
+      <div class="stats-list">
+  `;
+  if (dupes.length === 0) {
+    html += `<div class="stats-empty">No dupes yet.</div>`;
+  } else {
+    for (const c of dupes) {
+      html += statsRow(c, `×${c.dupes}`, "dupes");
+    }
+  }
+  html += `</div></div>`;
+
+  screen.innerHTML = html;
+  for (const row of screen.querySelectorAll(".stats-row")) {
+    row.onclick = () => goToCountry(row.dataset.code);
+  }
+}
+
+/* ===== MATCH ===== */
+let loadedMatch = null; // { owner, dupes:Set, missing:Set }
+
+function downloadJson(obj, filename) {
+  const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function myStickerSets() {
+  const dupes = new Set(), missing = new Set();
+  for (const c of data) {
+    for (let i = 0; i < c.counts.length; i++) {
+      const id = c.code + (i + 1);
+      if (c.counts[i] >= 2) dupes.add(id);
+      else if (c.counts[i] === 0) missing.add(id);
+    }
+  }
+  return { dupes, missing };
+}
+function stickerInfo(id) {
+  const code = id.slice(0, 3);
+  const idx = parseInt(id.slice(3), 10) - 1;
+  const c = data.find(d => d.code === code);
+  return {
+    code, idx,
+    country: c ? c.country : code,
+    group: c ? c.group : "?",
+    name: (NAMES[code] || [])[idx] || "—",
+    foil: ((FOILS[code] || [])[idx]) || false
+  };
+}
+function generateMatchFile() {
+  const me = myStickerSets();
+  const last = localStorage.getItem("fwc_match_name") || "";
+  const typed = prompt("Seu nome (vai aparecer pro seu amigo):", last);
+  if (typed === null) return;
+  const name = typed.trim() || "Anônimo";
+  localStorage.setItem("fwc_match_name", name);
+  downloadJson({
+    app: "figurinhas-copa-2026", type: "match", version: 1,
+    owner: name, generatedAt: new Date().toISOString(),
+    dupes: [...me.dupes], missing: [...me.missing]
+  }, "match-" + name.replace(/\s+/g, "_") + "-" + new Date().toISOString().slice(0, 10) + ".json");
+  setMatchMsg("Arquivo de match gerado. Envie pro seu amigo.", "ok");
+}
+function loadMatchFile(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const p = JSON.parse(reader.result);
+      if (p.type !== "match" || !Array.isArray(p.dupes) || !Array.isArray(p.missing)) {
+        throw new Error("não é um arquivo de match válido");
+      }
+      loadedMatch = { owner: p.owner || "amigo", dupes: new Set(p.dupes), missing: new Set(p.missing) };
+      renderMatch();
+    } catch (err) {
+      setMatchMsg("Falhou: " + err.message, "err");
+    }
+  };
+  reader.onerror = () => setMatchMsg("não consegui ler o arquivo", "err");
+  reader.readAsText(file);
+}
+function setMatchMsg(text, kind) {
+  const el = document.getElementById("match-msg");
+  if (!el) return;
+  el.textContent = text || "";
+  el.classList.remove("ok", "err");
+  if (kind) el.classList.add(kind);
+}
+function matchSection(title, emptyHint, ids, accent) {
+  let html = `<div class="match-section"><div class="match-section-title"><span>${title}</span><span class="mst-hint">${ids.length}</span></div>`;
+  if (ids.length === 0) { html += `<div class="match-empty-sm">${emptyHint}</div></div>`; return html; }
+  const byGroup = {};
+  for (const id of ids) { const inf = stickerInfo(id); (byGroup[inf.group] = byGroup[inf.group] || []).push({ id, inf }); }
+  for (const g of GROUPS_ORDER) {
+    const list = byGroup[g];
+    if (!list || list.length === 0) continue;
+    list.sort((a, b) => a.inf.idx - b.inf.idx);
+    const label = g === "FWC" ? "FWC" : "Grupo " + g;
+    html += `<div class="match-group"><div class="match-group-h">${label}</div>`;
+    for (const { id, inf } of list) {
+      const star = inf.foil ? '<span class="tr-foil">★</span>' : '';
+      html += `
+        <div class="match-row">
+          <div class="mr-code ${accent}">${star}${id}</div>
+          <div class="mr-info">
+            <div class="mr-name">${inf.name}</div>
+            <div class="mr-country">${inf.country}</div>
+          </div>
+        </div>`;
+    }
+    html += `</div>`;
+  }
+  html += `</div>`;
+  return html;
+}
+function renderMatch() {
+  const screen = document.getElementById("match");
+  let html = `
+    <div class="match-actions">
+      <button class="match-btn primary" id="match-generate">Gerar meu arquivo</button>
+      <button class="match-btn" id="match-load">Carregar de um amigo</button>
+      <input type="file" id="match-file" accept="application/json,.json" class="hidden">
+    </div>
+    <div class="match-msg" id="match-msg"></div>
+  `;
+  if (!loadedMatch) {
+    html += `<div class="match-empty">Carregue o arquivo de match de um amigo pra ver o que vocês podem trocar.</div>`;
+    screen.innerHTML = html;
+    appendMatchReset();
+    wireMatchControls();
+    return;
+  }
+  const me = myStickerSets();
+  const iReceive = [...loadedMatch.dupes].filter(id => me.missing.has(id));
+  const iGive = [...me.dupes].filter(id => loadedMatch.missing.has(id));
+  html += `
+    <div class="match-hero">
+      <div>
+        <div class="mh-owner">Match com ${loadedMatch.owner}</div>
+        <div class="mh-sub">${iReceive.length} pra receber · ${iGive.length} pra dar</div>
+      </div>
+      <button class="mh-reset" id="match-clear">Carregar outro</button>
+    </div>
+  `;
+  html += matchSection("Você recebe de " + loadedMatch.owner, "Nada por aqui: o que ele tem sobrando, você já tem.", iReceive, "recv");
+  html += matchSection("Você dá pra " + loadedMatch.owner, "Nada por aqui: o que ele precisa, você não tem repetida.", iGive, "give");
+  screen.innerHTML = html;
+  appendMatchReset();
+  wireMatchControls();
+}
+function appendMatchReset() {
+  const screen = document.getElementById("match");
+  screen.innerHTML += `
+    <div class="match-reset-wrap">
+      <button class="match-reset" id="match-reset">Zerar minha coleção</button>
+    </div>
+  `;
+}
+function wireMatchControls() {
+  const gen = document.getElementById("match-generate");
+  const load = document.getElementById("match-load");
+  const file = document.getElementById("match-file");
+  const clear = document.getElementById("match-clear");
+  if (gen) gen.onclick = generateMatchFile;
+  if (load) load.onclick = () => file.click();
+  if (file) file.onchange = () => {
+    const f = file.files && file.files[0];
+    if (f) loadMatchFile(f);
+    file.value = "";
+  };
+  if (clear) clear.onclick = () => { loadedMatch = null; renderMatch(); };
+  const reset = document.getElementById("match-reset");
+  if (reset) reset.onclick = resetCollection;
+}
+
+/* ===== ROUTING ===== */
+function setActiveTab(tab) {
+  for (const t of ["album", "trade", "stats", "match"]) {
+    const el = document.getElementById("tab-" + t);
+    if (el) el.classList.toggle("active", tab === t);
+  }
+}
+function showOnly(id) {
+  for (const sid of ["home", "country", "trade", "stats", "match"]) {
+    document.getElementById(sid).classList.toggle("hidden", sid !== id);
+  }
+}
+function goToHome() {
+  view = "home";
+  setActiveTab("album");
+  showOnly("home");
+  renderHome();
+  renderTopbar();
+  window.scrollTo(0, 0);
+}
+function goToCountry(code) {
+  view = "country";
+  setActiveTab("album");
+  activeCode = code;
+  const c = data.find(d => d.code === code);
+  activeGroup = c ? c.group : "A";
+  showOnly("country");
+  renderCountryView();
+  renderTopbar();
+  window.scrollTo(0, 0);
+}
+function goToTrade() {
+  view = "trade";
+  setActiveTab("trade");
+  showOnly("trade");
+  renderTrade();
+  renderTopbar();
+  window.scrollTo(0, 0);
+}
+function goToStats() {
+  view = "stats";
+  setActiveTab("stats");
+  showOnly("stats");
+  renderStats();
+  renderTopbar();
+  window.scrollTo(0, 0);
+}
+function goToMatch() {
+  view = "match";
+  setActiveTab("match");
+  showOnly("match");
+  renderMatch();
+  renderTopbar();
+  window.scrollTo(0, 0);
+}
+
+document.getElementById("back-btn").onclick = goToHome;
+document.getElementById("tab-album").onclick = goToHome;
+document.getElementById("tab-trade").onclick = goToTrade;
+document.getElementById("tab-stats").onclick = goToStats;
+document.getElementById("tab-match").onclick = goToMatch;
+function resetCollection() {
+  if (!confirm("Apagar tudo e voltar à coleção zerada? (faça um Backup antes se quiser guardar)")) return;
+  localStorage.removeItem(STORAGE_KEY);
+  data = JSON.parse(JSON.stringify(ORIGINAL));
+  renderMatch();
+  renderTopbar();
+}
+
+function exportData() {
+  const payload = {
+    app: "figurinhas-copa-2026",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    data: data.map(c => ({ code: c.code, counts: c.counts.slice() }))
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "figurinhas-copa-2026-" + new Date().toISOString().slice(0, 10) + ".json";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function importData(file, onDone) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const parsed = JSON.parse(reader.result);
+      const incoming = Array.isArray(parsed) ? parsed : parsed.data;
+      if (!Array.isArray(incoming)) throw new Error("formato inválido");
+      let applied = 0;
+      for (const item of incoming) {
+        if (!item || typeof item.code !== "string" || !Array.isArray(item.counts)) continue;
+        const c = data.find(d => d.code === item.code);
+        if (c && item.counts.length === c.counts.length) {
+          c.counts = item.counts.map(v => Number(v) || 0);
+          applied++;
+        }
+      }
+      if (applied === 0) throw new Error("nenhum país reconhecido no arquivo");
+      saveData();
+      onDone(null, applied);
+    } catch (err) {
+      onDone(err);
+    }
+  };
+  reader.onerror = () => onDone(new Error("não consegui ler o arquivo"));
+  reader.readAsText(file);
+}
+
+(function wireSettings() {
+  const modal = document.getElementById("settings-modal");
+  const msg = document.getElementById("settings-msg");
+  const fileInput = document.getElementById("import-file");
+  function setMsg(text, kind) {
+    msg.textContent = text || "";
+    msg.classList.remove("ok", "err");
+    if (kind) msg.classList.add(kind);
+  }
+  function open() { setMsg(""); modal.classList.remove("hidden"); }
+  function close() { modal.classList.add("hidden"); }
+  function rerender() {
+    if (view === "home") renderHome();
+    else if (view === "country") renderCountryView();
+    else if (view === "trade") renderTrade();
+    else if (view === "stats") renderStats();
+    renderTopbar();
+  }
+  document.getElementById("settings-btn").onclick = open;
+  document.getElementById("settings-close").onclick = close;
+  modal.addEventListener("click", e => { if (e.target === modal) close(); });
+  document.getElementById("backup-export").onclick = () => {
+    exportData();
+    setMsg("Backup exportado. Guarde o arquivo em lugar seguro.", "ok");
+  };
+  document.getElementById("backup-import").onclick = () => fileInput.click();
+  fileInput.onchange = () => {
+    const file = fileInput.files && fileInput.files[0];
+    if (!file) return;
+    if (!confirm("Importar vai substituir sua coleção atual. Continuar?")) { fileInput.value = ""; return; }
+    importData(file, (err, applied) => {
+      fileInput.value = "";
+      if (err) { setMsg("Falhou: " + err.message, "err"); return; }
+      setMsg("Importado: " + applied + " países atualizados.", "ok");
+      rerender();
+    });
+  };
+})();
+
+goToHome();
+</script>
+</body>
+</html>
