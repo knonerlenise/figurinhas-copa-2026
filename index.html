@@ -126,8 +126,11 @@
     display: flex; gap: 4px; overflow-x: auto;
     padding: 8px 12px; background: var(--panel);
     border-bottom: 1px solid var(--border);
-    position: sticky; top: 0; z-index: 9;
     scrollbar-width: none;
+  }
+  .country-block { scroll-margin-top: 8px; }
+  .country-block + .country-block {
+    margin-top: 6px; border-top: 1px solid var(--border);
   }
   .group-tabs::-webkit-scrollbar { display: none; }
   .group-tab {
@@ -187,7 +190,7 @@
     border-radius: 10px;
     background: var(--miss);
     color: white;
-    display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
     padding: 6px 5px 7px;
     text-align: center;
     position: relative;
@@ -199,19 +202,20 @@
   .tile:active { transform: scale(0.94); }
   .tile.ok { background: var(--ok); }
   .tile.trade { background: var(--trade); }
-  .tile .id {
-    font-size: 10px; font-weight: 600; letter-spacing: 0.4px;
-    opacity: 0.8; text-transform: uppercase;
-  }
   .tile .name {
-    font-size: 12px; font-weight: 600;
-    line-height: 1.15;
+    font-size: 10px; font-weight: 600; opacity: 0.9;
+    line-height: 1.1;
     overflow: hidden; text-overflow: ellipsis;
-    display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical;
+    display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical;
     word-break: break-word;
+    width: 100%;
+    padding: 1px 0 2px;
+  }
+  .tile .id {
+    font-size: 22px; font-weight: 800; letter-spacing: 0.3px;
+    text-transform: uppercase;
     flex: 1 1 auto;
-    padding: 2px 0;
-    align-self: center;
+    display: flex; align-items: center; justify-content: center;
     width: 100%;
   }
   .tile .badge {
@@ -617,13 +621,11 @@
 </div>
 
 <div id="country" class="country-screen hidden">
-  <div class="group-tabs" id="group-tabs"></div>
-  <div class="country-pills" id="country-pills"></div>
-  <div class="country-header">
-    <h2 id="country-name">País</h2>
-    <div class="header-meta" id="country-meta">0 / 20</div>
+  <div class="group-nav">
+    <div class="group-tabs" id="group-tabs"></div>
+    <div class="country-pills" id="country-pills"></div>
   </div>
-  <div class="grid" id="grid"></div>
+  <div id="group-blocks"></div>
 </div>
 
 <div id="trade" class="trade-screen hidden"></div>
@@ -645,8 +647,35 @@
 const ORIGINAL = [{"code": "MEX", "group": "A", "country": "Mexico", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "KOR", "group": "A", "country": "South Korea", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "RSA", "group": "A", "country": "South Africa", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "CZE", "group": "A", "country": "Czechia", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "CAN", "group": "B", "country": "Canada", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "SUI", "group": "B", "country": "Switzerland", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "QAT", "group": "B", "country": "Qatar", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "BIH", "group": "B", "country": "Bosnia and Herzegovina", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "BRA", "group": "C", "country": "Brazil", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "MAR", "group": "C", "country": "Morocco", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "SCO", "group": "C", "country": "Scotland", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "HAI", "group": "C", "country": "Haiti", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "USA", "group": "D", "country": "United States", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "PAR", "group": "D", "country": "Paraguay", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "AUS", "group": "D", "country": "Australia", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "TUR", "group": "D", "country": "Türkiye", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "GER", "group": "E", "country": "Germany", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "ECU", "group": "E", "country": "Ecuador", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "CIV", "group": "E", "country": "Ivory Coast", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "CUW", "group": "E", "country": "Curaçao", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "NED", "group": "F", "country": "Netherlands", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "JPN", "group": "F", "country": "Japan", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "TUN", "group": "F", "country": "Tunisia", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "SWE", "group": "F", "country": "Sweden", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "BEL", "group": "G", "country": "Belgium", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "IRN", "group": "G", "country": "Iran", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "EGY", "group": "G", "country": "Egypt", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "NZL", "group": "G", "country": "New Zealand", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "ESP", "group": "H", "country": "Spain", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "URU", "group": "H", "country": "Uruguay", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "KSA", "group": "H", "country": "Saudi Arabia", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "CPV", "group": "H", "country": "Cape Verde", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "FRA", "group": "I", "country": "France", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "SEN", "group": "I", "country": "Senegal", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "NOR", "group": "I", "country": "Norway", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "IRQ", "group": "I", "country": "Iraq", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "ARG", "group": "J", "country": "Argentina", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "AUT", "group": "J", "country": "Austria", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "ALG", "group": "J", "country": "Algeria", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "JOR", "group": "J", "country": "Jordan", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "POR", "group": "K", "country": "Portugal", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "COL", "group": "K", "country": "Colombia", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "UZB", "group": "K", "country": "Uzbekistan", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "COD", "group": "K", "country": "DR Congo", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "ENG", "group": "L", "country": "England", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "CRO", "group": "L", "country": "Croatia", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "PAN", "group": "L", "country": "Panama", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "GHA", "group": "L", "country": "Ghana", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"code": "FWC", "group": "FWC", "country": "FWC", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}];
 const NAMES = {"ALG": ["Team Badge", "Team Badge", "Ramy Bensebaini", "Youcef Atal", "Rayan Aït-Nouri", "Mohamed Amine Tougai", "Aïssa Mandi", "Ismael Bennacer", "Houssem Aquar", "Hicham Boudaoui", "Ramiz Zerrouki", "Nabil Bentalab", "Team Photo", "Farés Chaibi", "Riyad Mahrez", "Said Benrahma", "Anis Hadj Moussa", "Amine Gouiri", "Baghdad Bounedjah", "Mohammed Amoura"], "ARG": ["Team Badge", "Team Badge", "Nahuel Molina", "Cristian Romero", "Nicolas Otamendi", "Nicolas Tagliafico", "Leonardo Balerdi", "Enzo Fernandez", "Alexis Mac Allister", "Rodrigo De Paul", "Exequiel Palacios", "Leandro Paredes", "Team Photo", "Nico Paz", "Franco Mastantuono", "Nico Gonzalez", "Lionel Messi", "Lautaro Martinez", "Julian Alvarez", "Giuliano Simeone"], "AUS": ["Team Badge", "Team Badge", "Joe Gauci", "Harry Souttar", "Alessandro Circati", "Jordan Bos", "Aziz Behich", "Cameron Burgess", "Lewis Miller", "Milos Degenek", "Jackson Irvine", "Riley McGree", "Team Photo", "Aiden O'Neill", "Connor Metcalfe", "Patrick Yazbek", "Craig Goodwin", "Kusini Vengi", "Nestory Irankunda", "Mohamed Touré"], "AUT": ["Team Badge", "Team Badge", "Patrick Pentz", "David Alaba", "Kevin Danso", "Philipp Lienhart", "Stefan Posch", "Phillipp Mwene", "Alexander Prass", "Xaver Schlager", "Marcel Sabitzer", "Konrad Laimer", "Team Photo", "Florian Grillitsch", "Nicolas Seiwald", "Romano Schmid", "Patrick Wimmer", "Christoph Baumgartner", "Michael Gregoritsch", "Marko Arnautović"], "BEL": ["Team Badge", "Team Badge", "Arthur Theate", "Timothy Castagne", "Zeno Debast", "Brandon Mechele", "Maxim De Cuyper", "Thomas Meunier", "Youri Tielemans", "Amadou Onana", "Nicolas Raskin", "Alexis Saelemaekers", "Team Photo", "Hans Vanaken", "Kevin De Bruyne", "Jérémy Doku", "Charles De Ketelaere", "Leandro Trossard", "Loïs Openda", "Romelu Lukaku"], "BIH": ["Team Badge", "Team Badge", "Amer Dedic", "Sead Kolasinac", "Tarik Muharemovic", "Nihad Mujakic", "Nikola Katic", "Amir Hadziahmetovic", "Benjamin Tahirovic", "Armin Gigovic", "Ivan Sunjic", "Ivan Basic", "Team Photo", "Dzenis Burnic", "Esmir Bajraktarevic", "Amar Memic", "Ermedin Demirovic", "Edin Dzeko", "Samed Bazdar", "Haris Tabakovic"], "BRA": ["Team Badge", "Team Badge", "Bento", "Marquinhos", "Éder Militão", "Gabriel Magalhães", "Danilo", "Wesley", "Lucas Paquetá", "Casemiro", "Bruno Guimarães", "Luiz Henrique", "Team Photo", "Vinicius Júnior", "Rodrygo", "João Pedro", "Matheus Cunha", "Gabriel Martinelli", "Raphinha", "Estévão"], "CAN": ["Team Badge", "Team Badge", "Alphonso Davies", "Alistair Johnston", "Samuel Adekugbe", "Riche Larvea", "Derek Cornelius", "Moïse Bombito", "Kamal Miller", "Stephen Eustáquio", "Ismaël Koné", "Jonathan Osorio", "Team Photo", "Jacob Shaffelburg", "Mathieu Choinière", "Niko Sigur", "Tajon Buchanan", "Liam Millar", "Cyle Larin", "Jonathan David"], "CIV": ["Team Badge", "Team Badge", "Ghislain Konan", "Wilfried Singo", "Odilon Kossounou", "Evan Ndicka", "Willy Boly", "Emmanuel Agbadou", "Ousmane Diomande", "Franck Kessie", "Seko Fofana", "Ibrahim Sangare", "Team Photo", "Jean-Philippe Gbamin", "Amad Diallo", "Sébastien Haller", "Simon Adingra", "Yan Diomande", "Evann Guessand", "Oumar Diakite"], "COD": ["Team Badge", "Team Badge", "Aaron Wan-Bissaka", "Axel Tuanzebe", "Arthur Masuaku", "Chancel Mbemba", "Joris Kayembe", "Charles Pickel", "Ngal'ayel Mukau", "Edo Kayembe", "Samuel Moutoussamy", "Noah Sadiki", "Team Photo", "Théo Bongonda", "Meschak Elia", "Yoane Wissa", "Brian Cipenga", "Fiston Mayele", "Cédric Bakambu", "Nathanaël Mbuku"], "COL": ["Team Badge", "Team Badge", "David Ospina", "Dávinson Sánchez", "Yerry Mina", "Daniel Munoz", "Johan Mojica", "Jhon Lucumí", "Santiago Arias", "Jefferson Lerma", "Kevin Castaño", "Richard Rios", "Team Photo", "James Rodriguez", "Juan Fernando Quintero", "Jorge Carrascal", "Jon Arias", "Jhon Cordova", "Luis Suarez", "Luis Diaz"], "CPV": ["Team Badge", "Team Badge", "Logan Costa", "Pico", "Diney", "Steven Moreira", "Wagner Pina", "Joao Paulo", "Yannick Semedo", "Kevin Pina", "Patrick Andrade", "Jamiro Monteiro", "Team Photo", "Deroy Duarte", "Garry Rodrigues", "Jovane Cabral", "Ryan Mendes", "Dailon Livramento", "Willy Semedo", "Bebe"], "CRO": ["Team Badge", "Team Badge", "Duje Caleta-Car", "Josko Gvardiol", "Josip Stanišić", "Luka Vušković", "Josip Sutalo", "Kristijan Jakic", "Luka Modrić", "Mateo Kovacic", "Martin Baturina", "Lovro Majer", "Team Photo", "Mario Pasalic", "Petar Sucic", "Ivan Perišić", "Marco Pasalic", "Ante Budimir", "Andrej Kramarić", "Franjo Ivanovic"], "CUW": ["Team Badge", "Team Badge", "Armando Obispo", "Sherel Floranus", "Jurien Gaari", "Joshua Brenet", "Roshon Van Eijma", "Shurandy Sambo", "Livano Comenencia", "Godfried Roemeratoe", "Juninho Bacuna", "Leandro Bacuna", "Team Photo", "Tahith Chong", "Kenji Gorre", "Jearl Margaritha", "Jurgen Locadia", "Jeremy Antonisse", "Gervane Kastaneer", "Sontje Hansen"], "CZE": ["Team Badge", "Team Badge", "Jindrich Stanek", "Ladislav Krejci", "Vladimir Coufal", "Jaroslav Zeleny", "Tomas Holes", "David Zima", "Michal Sadilek", "Lukas Provod", "Lukas Cerv", "Tomas Soucek", "Team Photo", "Pavel Sulc", "Matej Vydra", "Vasil Kusej", "Tomas Chory", "Vaclav Cerny", "Adam Hlozek", "Patrik Schick"], "ECU": ["Team Badge", "Team Badge", "Gonzalo Valle", "Piero Hincapié", "Pervis Estupiñán", "Willian Pacho", "Ángelo Preciado", "Joel Ordóñez", "Moises Caicedo", "Alan Franco", "Kendry Paez", "Pedro Vite", "Team Photo", "John Veboah", "Leonardo Campana", "Gonzalo Plata", "Nilson Angulo", "Alan Minda", "Kevin Rodriguez", "Enner Valencia"], "EGY": ["Team Badge", "Team Badge", "Mohamed Hany", "Mohamed Hamdy", "Yasser Ibrahim", "Khaled Sobhi", "Ramy Rabia", "Hossam Abdelmaguid", "Ahmed Fatouh", "Marwan Attia", "Zizo", "Hamdy Fathy", "Team Photo", "Mohamed Lasheen", "Emam Ashour", "Osama Faisal", "Mohamed Salah", "Mostafa Mohamed", "Trezeguet", "Omar Marmoush"], "ENG": ["Team Badge", "Team Badge", "John Stones", "Marc Guéhi", "Ezri Konsa", "Trent Alexander-Arnold", "Reece James", "Dan Burn", "Jordan Henderson", "Declan Rice", "Jude Bellingham", "Cole Palmer", "Team Photo", "Morgan Rogers", "Anthony Gordon", "Phil Foden", "Bukayo Saka", "Harry Kane", "Marcus Rashford", "Ollie Watkins"], "ESP": ["Team Badge", "Team Badge", "Robin Le Normand", "Aymeric Laporte", "Dean Huijsen", "Pedro Porro", "Dani Carvajal", "Marc Cucurella", "Martín Zubimendi", "Rodri", "Pedri", "Fabian Ruiz", "Team Photo", "Mikel Merino", "Lamine Yamal", "Dani Olmo", "Nico Williams", "Ferran Torres", "Álvaro Morata", "Mikel Oyarzabal"], "FRA": ["Team Badge", "Team Badge", "Theo Hernandez", "William Saliba", "Jules Kounde", "Ibrahima Konate", "Dayot Upamecano", "Lucas Digne", "Aurélien Tchouaméni", "Eduardo Camavinga", "Manu Kone", "Adrien Rabiot", "Team Photo", "Michael Olise", "Ousmane Dembele", "Bradley Barcola", "Désiré Doué", "Kingsley Coman", "Hugo Ekitike", "Kylian Mbappe"], "FWC": ["Official Emblem", "Official Emblem", "Official Mascots", "Official Slogan", "Official Ball", "Canada", "Mexico", "USA", "Italy 1934", "Uruguay 1950", "West Germany 1954", "Brazil 1962", "West Germany 1974", "Argentina 1986", "Brazil 1994", "Brazil 2002", "Italy 2006", "Germany 2014", "Argentina 2022", "Panini Logo"], "GER": ["Team Badge", "Team Badge", "Jonathan Tah", "David Raum", "Nico Schlotterbeck", "Antonio Rüdiger", "Waldemar Anton", "Ridle Baku", "Maximilian Mittelstadt", "Joshua Kimmich", "Florian Wirtz", "Felix Nmecha", "Team Photo", "Leon Goretzka", "Jamal Musiala", "Serge Gnabry", "Kai Havertz", "Leroy Sane", "Karim Adeyemi", "Nick Woltemade"], "GHA": ["Team Badge", "Team Badge", "Tariq Lamptey", "Mohammed Salisu", "Alidu Seidu", "Alexander Djiku", "Gideon Mensah", "Caleb Yirenkyi", "Abdul Issahaku Fatawu", "Thomas Partey", "Salis Abdul Samed", "Kamaldeen Sulemana", "Team Photo", "Mohammed Kudus", "Inaki Williams", "Jordan Ayew", "Andrew Ayew", "Joseph Paintsil", "Osman Bukari", "Antoine Semenyo"], "HAI": ["Team Badge", "Team Badge", "Carlens Arcus", "Martin Expérience", "Jean-Kevin Duverne", "Ricardo Adé", "Duke Lacroix", "Garven Metusala", "Hannes Delcroix", "Leverton Pierre", "Danley Jean Jacques", "Jean-Ricner Bellegarde", "Team Photo", "Christopher Attys", "Derrick Etienne Jr", "Josue Casimir", "Ruben Providence", "Duckens Nazon", "Louicius Deedson", "Frantzdy Pierrot"], "IRN": ["Team Badge", "Team Badge", "Morteza Pouraliganji", "Ehsan Hajsafi", "Milad Mohammadi", "Shojae Khalilzadeh", "Ramin Rezaeian", "Hossein Kanaani", "Sadegh Moharrami", "Saleh Hardani", "Saeed Ezatolahi", "Saman Ghoddos", "Team Photo", "Omid Noorafkan", "Roozbeh Cheshmi", "Mohammad Mohebi", "Sardar Azmoun", "Mehdi Taremi", "Alireza Jahanbakhsh", "Ali Gholizadeh"], "IRQ": ["Team Badge", "Team Badge", "Rebin Sulaka", "Hussein Ali", "Akam Hashem", "Merchas Doski", "Zaid Tahseen", "Manaf Younis", "Zidane Iqbal", "Amir Al-Ammari", "Ibrahim Bavesh", "Ali Jasim", "Team Photo", "Youssef Amyn", "Aimar Sher", "Marko Farji", "Osama Rashid", "Ali Al-Hamadi", "Aymen Hussein", "Mohanad Ali"], "JOR": ["Team Badge", "Team Badge", "Ihsan Haddad", "Mohammad Abu Hashish", "Yazan Al-Arab", "Abdallah Nasib", "Saleem Obaid", "Mohammad Abualnadi", "Ibrahim Saadeh", "Nizar Al-Rashdan", "Noor Al-Rawabdeh", "Mohannad Abu Taha", "Team Photo", "Amer Jamous", "Musa Al-Taamari", "Yazan Al-Naimat", "Mahmoud Al-Mardi", "Ali Olwan", "Mohammad Abu Zrayq", "Ibrahim Sabra"], "JPN": ["Team Badge", "Team Badge", "Henry Heroki Mochizuki", "Ayumu Seko", "Junnosuke Suzuki", "Shogo Taniguchi", "Tsuyoshi Watanabe", "Kaishu Sano", "Yuki Soma", "Ao Tanaka", "Daichi Kamada", "Takefusa Kubo", "Team Photo", "Ritsu Doan", "Keito Nakamura", "Takumi Minamino", "Shuto Machino", "Junya Ito", "Koki Ogawa", "Ayase Ueda"], "KOR": ["Team Badge", "Team Badge", "Seung-Gyu Kim", "Min-jae Kim", "Yu-min Cho", "Young-woo Seol", "Han-beom Lee", "Tae-seok Lee", "Myung-jae Lee", "Jae-sung Lee", "In-beom Hwang", "Kang-in Lee", "Team Photo", "Seung-ho Paik", "Jens Castrop", "Dongg-yeong Lee", "Gue-sung Cho", "Heung-min Son", "Hee-chan Hwang", "Hyeon-Gyu Oh"], "KSA": ["Team Badge", "Team Badge", "Abdulrahman Al-Sanbi", "Saud Abdulhamid", "Nawaf Bouwashl", "Jihad Thakri", "Moteb Al-Harbi", "Hassan Altambakti", "Musab Aljuwayr", "Ziyad Aljohani", "Abdullah Alkhaibari", "Nasser Aldawsari", "Team Photo", "Saleh Abu Alshamat", "Marwan Alsahafi", "Salem Aldawsari", "Abdulrahman Al-Aboud", "Feras Akbrikan", "Saleh Alshehri", "Abdullah Al-Hamdan"], "MAR": ["Team Badge", "Team Badge", "Munir El Kajoui", "Achraf Hakimi", "Noussair Mazraoui", "Nayef Aguerd", "Roman Saiss", "Jawad El Yamio", "Adam Masina", "Sofyan Amrabat", "Azzedine Ounahi", "Eliesse Ben Seghir", "Team Photo", "Bilal El Khannouss", "Ismael Saibari", "Youssef En-Nesyri", "Abde Ezzalzouli", "Soufiane Rahimi", "Brahim Diaz", "Ayoub El Kaabi"], "MEX": ["Team Badge", "Team Badge", "Johan Vasquez", "Jorge Sánchez", "Cesar Montes", "Jesus Gallardo", "Israel Reyes", "Diego Lainez", "Carlos Rodriguez", "Edson Alvarez", "Orbelin Pineda", "Marcel Ruiz", "Team Photo", "Érick Sánchez", "Hirving Lozano", "Santiago Giménez", "Raúl Jiménez", "Alexis Vega", "Roberto Alvarado", "Cesar Huerta"], "NED": ["Team Badge", "Team Badge", "Virgil van Dijk", "Micky van de Ven", "Jurrien Timber", "Denzel Dumfries", "Nathan Aké", "Jeremie Frimpong", "Jan Paul van Hecke", "Tijjani Reijnders", "Ryan Gravenberch", "Teun Koopmeiners", "Team Photo", "Frenkie de Jong", "Xavi Simons", "Justin Kluivert", "Memphis Depay", "Donyell Malen", "Wout Weghorst", "Cody Gakpo"], "NOR": ["Team Badge", "Team Badge", "Julian Ryerson", "Leo Ostigård", "Kristoffer Vassbakk Ajer", "Marcus Holmgren Pedersen", "David Møller Wolfe", "Torbjørn Heggem", "Morten Thorsby", "Martin Ødegaard", "Sander Berge", "Andreas Schjelderup", "Team Photo", "Patrick Berg", "Erling Haaland", "Alexander Sørloth", "Aron Dønnum", "Jorgen Strand Larsen", "Antonio Nusa", "Oscar Bobb"], "NZL": ["Team Badge", "Team Badge", "Alex Paulsen", "Michael Boxall", "Liberato Cacace", "Tim Payne", "Tyler Bindon", "Francis de Vries", "Finn Surman", "Joe Bell", "Sarpreet Singh", "Ryan Thomas", "Team Photo", "Matthew Garbett", "Marko Stamenić", "Ben Old", "Chris Wood", "Elijah Just", "Callum McCowatt", "Kosta Barbarouses"], "PAN": ["Team Badge", "Team Badge", "Luis Mejia", "Fidel Escobar", "Andres Andrade", "Michael Amir Murillo", "Eric Davis", "Jose Cordoba", "Cesar Blackman", "Cristian Martinez", "Aníbal Godoy", "Adalberto Carrasquilla", "Team Photo", "Édgar Bárcenas", "Carlos Harvey", "Ismael Díaz", "Jose Fajardo", "Cecilio Waterman", "Jose Luiz Rodriguez", "Alberto Quintero"], "PAR": ["Team Badge", "Team Badge", "Orlando Gill", "Gustavo Gomez", "Fabián Balbuena", "Juan José Cáceres", "Omar Alderete", "Junior Alonso", "Mathías Villasanti", "Diego Gomez", "Damián Bobadilla", "Andres Cubas", "Team Photo", "Matias Galarza Fonda", "Julio Enciso", "Alejandro Romero Gamarra", "Miguel Almirón", "Ramon Sosa", "Angel Romero", "Antonio Sanabria"], "POR": ["Team Badge", "Team Badge", "Jose Sa", "Ruben Dias", "João Cancelo", "Diogo Dalot", "Nuno Mendes", "Gonçalo Inácio", "Bernardo Silva", "Bruno Fernandes", "Ruben Neves", "Vitinha", "Team Photo", "João Neves", "Cristiano Ronaldo", "Francisco Trincao", "João Felix", "Gonçalo Ramos", "Pedro Neto", "Rafael Leão"], "QAT": ["Team Badge", "Team Badge", "Sultan Albrake", "Lucas Mendes", "Homam Ahmed", "Boualem Khoukhi", "Pedro Miguel", "Tarek Salman", "Mohamed Al-Mannai", "Karim Boudiaf", "Assim Madibo", "Ahmed Fatehi", "Team Photo", "Mohammed Waad", "Abdulaziz Hatem", "Hassan Al-Haydos", "Edmilson Junior", "Akram Hassan Afif", "Ahmed Al Ganehi", "Almoez Ali"], "RSA": ["Team Badge", "Team Badge", "Sipho Chaine", "Aubrey Modiba", "Samukele Kabini", "Mbekezeli Mbokazi", "Khulumani Ndamane", "Siyabonga Ngezana", "Khuliso Mudau", "Nkosinathi Sibisi", "Teboho Mokoena", "Thalente Mbatha", "Team Photo", "Bathasi Aubaas", "Yaya Sithole", "Sipho Mbule", "Lyle Foster", "Iqraam Rayners", "Mohau Nkota", "Oswin Appollis"], "SCO": ["Team Badge", "Team Badge", "Jack Hendry", "Kieran Tierney", "Aaron Hickey", "Andrew Robertson", "Scott McKenna", "John Souttar", "Anthony Ralston", "Grant Hanley", "Scott McTominay", "Billy Gilmour", "Team Photo", "Lewis Ferguson", "Ryan Christie", "Kenny McLean", "John McGinn", "Lyndon Dykes", "Che Adams", "Ben Gannon-Doak"], "SEN": ["Team Badge", "Team Badge", "Yehvann Diouf", "Moussa Niakhaté", "Abdoulaye Seck", "Ismail Jakobs", "El Hadji Malick Diouf", "Kalidou Koulibaly", "Idrissa Gana Gueye", "Pape Matar Sarr", "Pape Gueye", "Habib Diarra", "Team Photo", "Lamine Camara", "Sadio Mane", "Ismaïla Sarr", "Boulaye Dia", "Iliman Ndiaye", "Nicolas Jackson", "Krepin Diatta"], "SUI": ["Team Badge", "Team Badge", "Yvon Mvogo", "Manuel Akanji", "Ricardo Rodriguez", "Nico Elvedi", "Aurèle Amenda", "Silvan Widmer", "Granit Xhaka", "Denis Zakaria", "Remo Freuler", "Fabian Rieder", "Team Photo", "Ardon Jashari", "Johan Manzambi", "Michel Aebischer", "Breel Embolo", "Ruben Vargas", "Dan Ndoye", "Zeki Amdouni"], "SWE": ["Team Badge", "Team Badge", "Isak Hien", "Gabriel Gudmundsson", "Emil Holm", "Victor Nilsson Lindelöf", "Gustaf Lagerbielke", "Lucas Bergvall", "Hugo Larsson", "Jesper Karlström", "Yasin Ayari", "Mattias Svanberg", "Team Photo", "Daniel Svensson", "Ken Sema", "Roony Bardghji", "Dejan Kulusevski", "Anthony Elanga", "Alexander Isak", "Viktor Gyökeres"], "TUN": ["Team Badge", "Team Badge", "Aymen Dahmen", "Yan Valery", "Montassar Talbi", "Yassine Meriah", "Ali Abdi", "Dylan Bronn", "Ellyes Skhiri", "Aissa Laidouni", "Ferjani Sassi", "Mohamed Ali Ben Romdhane", "Team Photo", "Hannibal Mejbri", "Elias Achouri", "Elias Saad", "Hazem Mastouri", "Ismael Gharbi", "Sayfallah Ltaief", "Naim Sliti"], "TUR": ["Team Badge", "Team Badge", "Mert Muldur", "Zeki Celik", "Abdulkerim Bardakci", "Caglar Soyuncu", "Merih Demiral", "Ferdi Kadioglu", "Kaan Ayhan", "Ismail Yuksek", "Hakan Calhanoglu", "Orkun Kokcu", "Team Photo", "Arda Guler", "Irfan Can Kahveci", "Yunus Akgun", "Can Uzun", "Baris Alper Yilmaz", "Kerem Akturkoglu", "Kenan Yildiz"], "URU": ["Team Badge", "Team Badge", "Santiago Mele", "Ronald Araujo", "José María Giménez", "Sebastian Caceres", "Mathias Olivera", "Guillermo Varela", "Nahitan Nandez", "Federico Valverde", "Giorgian De Arrascaeta", "Rodrigo Bentancur", "Team Photo", "Manuel Ugarte", "Nicolás de la Cruz", "Maxi Araujo", "Darwin Núñez", "Federico Viñas", "Rodrigo Aguirre", "Facundo Pellistri"], "USA": ["Team Badge", "Team Badge", "Chris Richards", "Tim Ream", "Mark McKenzie", "Alex Freeman", "Antonee Robinson", "Tyler Adams", "Tanner Tessmann", "Weston McKenny", "Christian Roldan", "Timothy Weah", "Team Photo", "Diego Luna", "Malik Tillman", "Christian Pulisic", "Brenden Aaronson", "Ricardo Pepi", "Haji Wright", "Folarin Balogun"], "UZB": ["Team Badge", "Team Badge", "Farrukh Savfiev", "Sherzod Nasrullaev", "Umar Eshmurodov", "Husniddin Aliqulov", "Rustamjon Ashurmatov", "Khojiakbar Alijonov", "Abdukodir Khusanov", "Odiljon Hamrobekov", "Otabek Shukurov", "Jamshid Iskanderov", "Team Photo", "Azizbek Turgunboev", "Khojimat Erkinov", "Eldor Shomurodov", "Oston Urunov", "Jaloliddin Masharipov", "Igor Sergeev", "Abbosbek Fayzullaev"]};
 const FOILS = {"FWC": [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true], "ALG": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "ARG": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "AUS": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "AUT": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "BEL": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "BIH": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "BRA": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "CAN": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "CIV": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "COD": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "COL": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "CPV": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "CRO": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "CUW": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "CZE": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "ECU": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "EGY": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "ENG": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "ESP": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "FRA": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "GER": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "GHA": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "HAI": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "IRN": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "IRQ": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "JOR": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "JPN": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "KOR": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "KSA": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "MAR": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "MEX": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "NED": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "NOR": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "NZL": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "PAN": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "PAR": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "POR": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "QAT": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "RSA": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "SCO": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "SEN": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "SUI": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "SWE": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "TUN": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "TUR": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "URU": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "USA": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], "UZB": [true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false]};
+// Figurinha 2 de cada país é o goleiro (placeholder até ter os nomes reais no CSV).
+for (const _c in NAMES) {
+  if (_c !== "FWC" && NAMES[_c][1] === "Team Badge") NAMES[_c][1] = "Goleiro";
+}
 const STORAGE_KEY = "fwc_mockup_v3";
-const GROUPS_ORDER = ["A","B","C","D","E","F","G","H","I","J","K","L","FWC"];
+const GROUPS_ORDER = ["FWC","A","B","C","D","E","F","G","H","I","J","K","L"];
+// Ordem oficial do álbum (esquerda -> direita), conforme listapaíses.csv
+const ALBUM_ORDER = [
+  "FWC",
+  "MEX","RSA","KOR","CZE",
+  "CAN","BIH","QAT","SUI",
+  "BRA","MAR","HAI","SCO",
+  "USA","PAR","AUS","TUR",
+  "GER","CUW","CIV","ECU",
+  "NED","JPN","SWE","TUN",
+  "BEL","EGY","IRN","NZL",
+  "ESP","CPV","KSA","URU",
+  "FRA","SEN","IRQ","NOR",
+  "ARG","ALG","AUT","JOR",
+  "POR","COD","UZB","COL",
+  "ENG","CRO","GHA","PAN"
+];
+function sortByAlbum(arr) {
+  return arr.slice().sort((a, b) => {
+    const ia = ALBUM_ORDER.indexOf(a.code);
+    const ib = ALBUM_ORDER.indexOf(b.code);
+    return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+  });
+}
 
 const ISO2 = {
   MEX:"MX", KOR:"KR", RSA:"ZA", CZE:"CZ",
@@ -673,7 +702,7 @@ function flagFor(code) {
   return String.fromCodePoint(A + iso.charCodeAt(0) - 65, A + iso.charCodeAt(1) - 65);
 }
 
-let data = loadData();
+let data = sortByAlbum(loadData());
 let view = "home";
 let activeCode = null;
 let activeGroup = "A";
@@ -690,12 +719,12 @@ function saveData() {
 }
 
 function totals() {
-  let owned = 0, dupes = 0, miss = 0;
+  let owned = 0, dupes = 0, miss = 0, single = 0;
   for (const c of data) for (const v of c.counts) {
     if (v === 0) miss++;
-    else { owned++; if (v >= 2) dupes += v - 1; }
+    else { owned++; if (v === 1) single++; else if (v >= 2) dupes += v - 1; }
   }
-  return { owned, dupes, miss, total: data.reduce((s,c)=>s+c.counts.length,0) };
+  return { owned, dupes, miss, single, total: data.reduce((s,c)=>s+c.counts.length,0) };
 }
 function countryStats(code) {
   const c = data.find(d => d.code === code);
@@ -740,7 +769,7 @@ function renderTopbar() {
   const t = totals();
   document.getElementById("owned-count").textContent = t.owned;
   document.getElementById("total-count").textContent = t.total;
-  document.getElementById("ok-count").textContent = t.owned - t.dupes;
+  document.getElementById("ok-count").textContent = t.single;
   document.getElementById("dupes-count").textContent = t.dupes;
   document.getElementById("miss-count").textContent = t.miss;
   const pct = t.total ? Math.round((t.owned / t.total) * 100) : 0;
@@ -820,6 +849,7 @@ function renderGroupTabs() {
       const first = data.find(d => d.group === g);
       if (first) activeCode = first.code;
       renderCountryView();
+      window.scrollTo(0, 0);
     };
     el.appendChild(b);
   }
@@ -841,33 +871,68 @@ function renderCountryPills() {
       <div class="pill-meta">${c.country} · <span class="meta-owned" style="color:${color}">${stats.owned}</span>${dupesHtml}</div>
       <div class="pill-bar"><div style="width:${pct}%; background:${color};"></div></div>
     `;
-    pill.onclick = () => { activeCode = c.code; renderCountryView(); };
+    pill.onclick = () => {
+      activeCode = c.code;
+      renderCountryPills();
+      const block = document.getElementById("block-" + c.code);
+      if (block) block.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
     el.appendChild(pill);
   }
 }
-function renderGrid() {
-  const c = data.find(d => d.code === activeCode);
-  if (!c) return;
-  const stats = countryStats(c.code);
-  document.getElementById("country-name").textContent = `${c.country} (${c.code})`;
-  document.getElementById("country-meta").textContent =
-    `${stats.owned} / 20${stats.dupes ? ` · ${stats.dupes} repetidas` : ""}`;
-  const grid = document.getElementById("grid");
-  grid.innerHTML = "";
-  for (let i = 0; i < c.counts.length; i++) {
-    grid.appendChild(buildTile(c, i));
+// FWC: a "Panini Logo" é guardada internamente como FWC20 (idx 19),
+// mas deve aparecer primeiro e rotulada como FWC00.
+function displayNum(code, idx) {
+  if (code === "FWC" && idx === 19) return "00";
+  return String(idx + 1);
+}
+function displayId(code, idx) {
+  return code + displayNum(code, idx);
+}
+function tileOrder(c) {
+  const order = c.counts.map((_, i) => i);
+  if (c.code === "FWC") return [19, ...order.slice(0, 19)];
+  return order;
+}
+function countryMetaText(code) {
+  const stats = countryStats(code);
+  return `${stats.owned} / 20${stats.dupes ? ` · ${stats.dupes} repetidas` : ""}`;
+}
+function renderGroupGrids() {
+  const wrap = document.getElementById("group-blocks");
+  wrap.innerHTML = "";
+  const list = data.filter(d => d.group === activeGroup);
+  for (const c of list) {
+    const block = document.createElement("div");
+    block.className = "country-block";
+    block.id = "block-" + c.code;
+
+    const header = document.createElement("div");
+    header.className = "country-header";
+    header.innerHTML = `
+      <h2>${c.country} (${c.code})</h2>
+      <div class="header-meta" data-meta="${c.code}">${countryMetaText(c.code)}</div>
+    `;
+    block.appendChild(header);
+
+    const grid = document.createElement("div");
+    grid.className = "grid";
+    for (const i of tileOrder(c)) grid.appendChild(buildTile(c, i));
+    block.appendChild(grid);
+
+    wrap.appendChild(block);
   }
 }
 function renderCountryView() {
   renderGroupTabs();
   renderCountryPills();
-  renderGrid();
+  renderGroupGrids();
   setHelp(document.getElementById("country"), "Como usar · Figurinhas", [
     "Toque numa figurinha pra somar <b>+1</b>.",
     "Segure (toque longo) pra <b>tirar 1</b>.",
-    "Sem cor = falta · preenchida = você tem · <b>azul (+N)</b> = repetidas.",
-    "Borda dourada = figurinha especial (<b>foil</b>).",
-    "Use as abas dos grupos no topo pra pular de país."
+    "<b>Arraste a tela pra esquerda</b> pra ir pro próximo grupo (pra direita volta).",
+    "Toque num país nas abas de cima pra <b>pular direto</b> pra ele.",
+    "Sem cor = falta · preenchida = você tem · <b>azul (+N)</b> = repetidas · borda dourada = especial."
   ]);
 }
 
@@ -889,8 +954,8 @@ function paintTile(tile, country, idx) {
   const arr = NAMES[country.code] || [];
   const name = arr[idx] || "—";
   tile.innerHTML = `
-    <div class="id">${country.code}${idx + 1}</div>
     <div class="name">${name}</div>
+    <div class="id">${displayId(country.code, idx)}</div>
     ${v >= 2 ? `<span class="badge">+${v - 1}</span>` : ""}
   `;
 }
@@ -898,25 +963,38 @@ function attachTileHandlers(tile, country, idx) {
   let pressTimer = null;
   let longPressed = false;
   let pointerId = null;
+  let moved = false;
+  let startX = 0, startY = 0;
 
   tile.addEventListener("pointerdown", e => {
     e.preventDefault();
     pointerId = e.pointerId;
     longPressed = false;
+    moved = false;
+    startX = e.clientX; startY = e.clientY;
     tile.setPointerCapture(pointerId);
     pressTimer = setTimeout(() => {
+      if (moved) return;
       longPressed = true;
       decrement(country, idx, tile);
       if (navigator.vibrate) navigator.vibrate(20);
     }, 450);
   });
+  tile.addEventListener("pointermove", e => {
+    if (pointerId === null) return;
+    if (Math.abs(e.clientX - startX) > 10 || Math.abs(e.clientY - startY) > 10) {
+      moved = true;
+      clearTimeout(pressTimer);
+    }
+  });
   tile.addEventListener("pointerup", e => {
     clearTimeout(pressTimer);
     if (pointerId !== null && tile.hasPointerCapture(pointerId)) tile.releasePointerCapture(pointerId);
+    const wasLong = longPressed, wasMoved = moved;
     pointerId = null;
-    if (!longPressed) increment(country, idx, tile);
+    if (!wasLong && !wasMoved) increment(country, idx, tile);
   });
-  tile.addEventListener("pointercancel", () => { clearTimeout(pressTimer); });
+  tile.addEventListener("pointercancel", () => { clearTimeout(pressTimer); pointerId = null; });
   tile.addEventListener("contextmenu", e => e.preventDefault());
 }
 
@@ -934,12 +1012,9 @@ function decrement(country, idx, tile) {
 }
 function refreshAfterTileChange(code) {
   renderTopbar();
-  // update country pill stats and the country header (cheap)
   renderCountryPills();
-  const c = data.find(d => d.code === code);
-  const stats = countryStats(code);
-  document.getElementById("country-meta").textContent =
-    `${stats.owned} / 20${stats.dupes ? ` · ${stats.dupes} repetidas` : ""}`;
+  const meta = document.querySelector(`#group-blocks [data-meta="${code}"]`);
+  if (meta) meta.textContent = countryMetaText(code);
 }
 
 
@@ -989,7 +1064,7 @@ function renderTrade() {
         <div class="trade-row-wrap">
           <div class="trade-row-action">−1</div>
           <div class="trade-row" data-code="${it.code}" data-idx="${it.idx}">
-            <div class="tr-code">${star}${it.code}${it.idx + 1}</div>
+            <div class="tr-code">${star}${displayId(it.code, it.idx)}</div>
             <div class="tr-info">
               <div class="tr-name">${it.name}</div>
               <div class="tr-country">${it.country}</div>
@@ -1118,7 +1193,7 @@ function renderStats() {
                    .sort((a,b) => b.dupes - a.dupes)
                    .slice(0, 8);
 
-  const okCount = t.owned - t.dupes;
+  const okCount = t.single;
 
   let html = `
     <div class="stats-hero">
@@ -1296,14 +1371,15 @@ function matchSection(title, emptyHint, ids, accent) {
   for (const g of GROUPS_ORDER) {
     const list = byGroup[g];
     if (!list || list.length === 0) continue;
-    list.sort((a, b) => a.inf.idx - b.inf.idx);
+    const sk = x => (x.inf.code === "FWC" && x.inf.idx === 19) ? -1 : x.inf.idx;
+    list.sort((a, b) => sk(a) - sk(b));
     const label = g === "FWC" ? "FWC" : "Grupo " + g;
     html += `<div class="match-group"><div class="match-group-h">${label}</div>`;
     for (const { id, inf } of list) {
       const star = inf.foil ? '<span class="tr-foil">★</span>' : '';
       html += `
         <div class="match-row">
-          <div class="mr-code ${accent}">${star}${id}</div>
+          <div class="mr-code ${accent}">${star}${displayId(inf.code, inf.idx)}</div>
           <div class="mr-info">
             <div class="mr-name">${inf.name}</div>
             <div class="mr-country">${inf.country}</div>
@@ -1417,6 +1493,35 @@ function goToCountry(code) {
   renderTopbar();
   window.scrollTo(0, 0);
 }
+function changeGroup(delta) {
+  const groups = GROUPS_ORDER.filter(g => data.some(d => d.group === g));
+  const i = groups.indexOf(activeGroup);
+  const ni = i + delta;
+  if (i === -1 || ni < 0 || ni >= groups.length) return;
+  activeGroup = groups[ni];
+  const first = data.find(d => d.group === activeGroup);
+  activeCode = first ? first.code : null;
+  renderCountryView();
+  renderTopbar();
+  window.scrollTo(0, 0);
+}
+(function attachGroupSwipe() {
+  const el = document.getElementById("country");
+  let sx = 0, sy = 0, tracking = false;
+  el.addEventListener("touchstart", e => {
+    if (e.touches.length !== 1) { tracking = false; return; }
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY; tracking = true;
+  }, { passive: true });
+  el.addEventListener("touchend", e => {
+    if (!tracking) return;
+    tracking = false;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - sx, dy = t.clientY - sy;
+    if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.6) {
+      changeGroup(dx < 0 ? 1 : -1);
+    }
+  }, { passive: true });
+})();
 function goToTrade() {
   view = "trade";
   setActiveTab("trade");
@@ -1450,7 +1555,7 @@ document.getElementById("tab-match").onclick = goToMatch;
 function resetCollection() {
   if (!confirm("Apagar tudo e voltar à coleção zerada? (faça um Backup antes se quiser guardar)")) return;
   localStorage.removeItem(STORAGE_KEY);
-  data = JSON.parse(JSON.stringify(ORIGINAL));
+  data = sortByAlbum(JSON.parse(JSON.stringify(ORIGINAL)));
   renderMatch();
   renderTopbar();
 }
