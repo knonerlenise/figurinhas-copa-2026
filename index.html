@@ -127,11 +127,15 @@
     padding: 8px 12px; background: var(--panel);
     border-bottom: 1px solid var(--border);
     scrollbar-width: none;
+    position: sticky; top: var(--topbar-h, 96px); z-index: 8;
   }
-  .country-block { scroll-margin-top: 8px; }
+  .group-tab:disabled { opacity: 0.3; cursor: default; }
+  #trade-tabs { margin: -12px -12px 14px; }
+  .country-block { scroll-margin-top: calc(var(--topbar-h, 96px) + 50px); }
   .country-block + .country-block {
     margin-top: 6px; border-top: 1px solid var(--border);
   }
+  .trade-group { scroll-margin-top: calc(var(--topbar-h, 96px) + 50px); }
   .group-tabs::-webkit-scrollbar { display: none; }
   .group-tab {
     flex: 0 0 auto;
@@ -621,10 +625,8 @@
 </div>
 
 <div id="country" class="country-screen hidden">
-  <div class="group-nav">
-    <div class="group-tabs" id="group-tabs"></div>
-    <div class="country-pills" id="country-pills"></div>
-  </div>
+  <div class="group-tabs" id="group-tabs"></div>
+  <div class="country-pills" id="country-pills"></div>
   <div id="group-blocks"></div>
 </div>
 
@@ -1038,13 +1040,14 @@ function renderTrade() {
   const screen = document.getElementById("trade");
   const items = getTradeItems();
   const totalDupes = items.reduce((s, x) => s + x.dupes, 0);
-  let html = `
+  const summaryHtml = `
     <div class="trade-summary">
       <span class="ts-num">${totalDupes}</span>
       <span class="ts-label">repetida${totalDupes === 1 ? "" : "s"} pra trocar</span>
     </div>
   `;
   if (items.length === 0) {
+    let html = summaryHtml;
     html += `<div class="trade-empty">Nenhuma repetida ainda. Quando você marcar uma figurinha que já tem, ela aparece aqui.</div>`;
     html += tradeHelp();
     screen.innerHTML = html;
@@ -1052,6 +1055,7 @@ function renderTrade() {
   }
   const byGroup = {};
   for (const it of items) (byGroup[it.group] = byGroup[it.group] || []).push(it);
+  let html = tradeGroupBar(byGroup) + summaryHtml;
   for (const g of GROUPS_ORDER) {
     const list = byGroup[g];
     if (!list || list.length === 0) continue;
@@ -1075,7 +1079,7 @@ function renderTrade() {
       `;
     }
     html += `
-      <div class="trade-group">
+      <div class="trade-group" id="tg-${g}">
         <div class="trade-group-header">
           <span>${groupLabel}</span>
           <span class="tgh-count">×${groupDupes}</span>
@@ -1089,6 +1093,20 @@ function renderTrade() {
   for (const row of screen.querySelectorAll(".trade-row")) {
     attachTradeSwipe(row);
   }
+  for (const btn of screen.querySelectorAll("#trade-tabs .group-tab")) {
+    btn.onclick = () => {
+      const target = document.getElementById("tg-" + btn.dataset.g);
+      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+  }
+}
+function tradeGroupBar(byGroup) {
+  let b = '<div class="group-tabs" id="trade-tabs">';
+  for (const g of GROUPS_ORDER) {
+    const has = byGroup[g] && byGroup[g].length;
+    b += `<button class="group-tab" data-g="${g}"${has ? "" : " disabled"}>${g}</button>`;
+  }
+  return b + '</div>';
 }
 function tradeHelp() {
   return helpCard("Como usar · Trade", [
@@ -1642,6 +1660,14 @@ function importData(file, onDone) {
     });
   };
 })();
+
+function setTopbarVar() {
+  const tb = document.querySelector(".topbar");
+  if (tb) document.documentElement.style.setProperty("--topbar-h", tb.offsetHeight + "px");
+}
+window.addEventListener("resize", setTopbarVar);
+setTopbarVar();
+setTimeout(setTopbarVar, 300);
 
 goToHome();
 </script>
