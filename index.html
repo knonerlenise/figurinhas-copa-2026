@@ -493,6 +493,22 @@
     font-size: 12px; font-weight: 600; cursor: pointer;
   }
 
+  /* ===== HELP CARD (fim de cada tela) ===== */
+  .help-card {
+    margin: 18px 4px 0;
+    padding: 12px 14px;
+    background: rgba(255,255,255,0.03);
+    border: 1px dashed var(--panel-2);
+    border-radius: 10px;
+  }
+  .help-card .help-title {
+    font-size: 11px; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px;
+  }
+  .help-card ul { margin: 0; padding-left: 16px; }
+  .help-card li { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 3px; }
+  .help-card b { color: var(--text); font-weight: 600; }
+
   /* ===== MODAL ===== */
   .modal-backdrop {
     position: fixed; inset: 0; background: rgba(0,0,0,0.6);
@@ -589,9 +605,9 @@
     </div>
     <div class="bar"><div id="progress-bar" style="width: 0%"></div></div>
     <div class="stat-pills">
-      <span class="pill ok">ok <span id="ok-count">0</span></span>
-      <span class="pill trade">dupes <span id="dupes-count">0</span></span>
-      <span class="pill">missing <span id="miss-count">0</span></span>
+      <span class="pill ok">tenho <span id="ok-count">0</span></span>
+      <span class="pill trade">repetidas <span id="dupes-count">0</span></span>
+      <span class="pill">faltam <span id="miss-count">0</span></span>
     </div>
   </div>
 </div>
@@ -604,7 +620,7 @@
   <div class="group-tabs" id="group-tabs"></div>
   <div class="country-pills" id="country-pills"></div>
   <div class="country-header">
-    <h2 id="country-name">Country</h2>
+    <h2 id="country-name">País</h2>
     <div class="header-meta" id="country-meta">0 / 20</div>
   </div>
   <div class="grid" id="grid"></div>
@@ -705,6 +721,20 @@ function barColor(owned, total) {
   return "var(--ok)";
 }
 
+/* ===== AJUDA POR TELA ===== */
+function helpInner(title, items) {
+  return `<div class="help-title">${title}</div><ul>${items.map(t => `<li>${t}</li>`).join("")}</ul>`;
+}
+function helpCard(title, items) {
+  return `<div class="help-card">${helpInner(title, items)}</div>`;
+}
+function setHelp(parentEl, title, items) {
+  let card = parentEl.querySelector(":scope > .help-card");
+  if (!card) { card = document.createElement("div"); card.className = "help-card"; }
+  card.innerHTML = helpInner(title, items);
+  parentEl.appendChild(card);
+}
+
 /* ===== TOP BAR ===== */
 function renderTopbar() {
   const t = totals();
@@ -768,6 +798,13 @@ function renderHome() {
     card.onclick = () => goToCountry(head.code);
     grid.appendChild(card);
   }
+  setHelp(document.getElementById("home"), "Como usar · Álbum", [
+    "Toque num grupo pra abrir os países dele.",
+    "As barrinhas mostram <b>quantas figurinhas você tem</b> de cada país: <b>🔴 até 5</b>, <b>🟠 6-10</b>, <b>🟡 11-15</b>, <b>🟢 16-20</b>.",
+    "O número à direita de cada país é quantas <b>repetidas</b> você tem dele.",
+    "Terminou de atualizar? Toque em <b>Backup → Exportar</b> pra salvar sua coleção e não perder nada (se trocar de celular ou limpar o navegador).",
+    "Pra usar no PC ou em outro celular: <b>Backup → Exportar</b> aqui, mande o arquivo pra você (WhatsApp/Drive) e <b>Backup → Importar</b> no outro aparelho."
+  ]);
 }
 
 /* ===== COUNTRY ===== */
@@ -814,7 +851,7 @@ function renderGrid() {
   const stats = countryStats(c.code);
   document.getElementById("country-name").textContent = `${c.country} (${c.code})`;
   document.getElementById("country-meta").textContent =
-    `${stats.owned} / 20${stats.dupes ? ` · ${stats.dupes} dupes` : ""}`;
+    `${stats.owned} / 20${stats.dupes ? ` · ${stats.dupes} repetidas` : ""}`;
   const grid = document.getElementById("grid");
   grid.innerHTML = "";
   for (let i = 0; i < c.counts.length; i++) {
@@ -825,6 +862,13 @@ function renderCountryView() {
   renderGroupTabs();
   renderCountryPills();
   renderGrid();
+  setHelp(document.getElementById("country"), "Como usar · Figurinhas", [
+    "Toque numa figurinha pra somar <b>+1</b>.",
+    "Segure (toque longo) pra <b>tirar 1</b>.",
+    "Sem cor = falta · preenchida = você tem · <b>azul (+N)</b> = repetidas.",
+    "Borda dourada = figurinha especial (<b>foil</b>).",
+    "Use as abas dos grupos no topo pra pular de país."
+  ]);
 }
 
 function buildTile(country, idx) {
@@ -895,7 +939,7 @@ function refreshAfterTileChange(code) {
   const c = data.find(d => d.code === code);
   const stats = countryStats(code);
   document.getElementById("country-meta").textContent =
-    `${stats.owned} / 20${stats.dupes ? ` · ${stats.dupes} dupes` : ""}`;
+    `${stats.owned} / 20${stats.dupes ? ` · ${stats.dupes} repetidas` : ""}`;
 }
 
 
@@ -922,11 +966,12 @@ function renderTrade() {
   let html = `
     <div class="trade-summary">
       <span class="ts-num">${totalDupes}</span>
-      <span class="ts-label">dupe${totalDupes === 1 ? "" : "s"} ready to swap</span>
+      <span class="ts-label">repetida${totalDupes === 1 ? "" : "s"} pra trocar</span>
     </div>
   `;
   if (items.length === 0) {
-    html += `<div class="trade-empty">No dupes yet — once you collect a sticker you already own, it shows up here.</div>`;
+    html += `<div class="trade-empty">Nenhuma repetida ainda. Quando você marcar uma figurinha que já tem, ela aparece aqui.</div>`;
+    html += tradeHelp();
     screen.innerHTML = html;
     return;
   }
@@ -964,10 +1009,19 @@ function renderTrade() {
       </div>
     `;
   }
+  html += tradeHelp();
   screen.innerHTML = html;
   for (const row of screen.querySelectorAll(".trade-row")) {
     attachTradeSwipe(row);
   }
+}
+function tradeHelp() {
+  return helpCard("Como usar · Trade", [
+    "Lista das suas <b>repetidas</b> (o que dá pra trocar).",
+    "Arraste uma figurinha <b>pra esquerda</b> pra tirar 1 (quando você trocar).",
+    "★ = figurinha especial (foil).",
+    "Cada linha mostra código, nome do jogador e quantas você tem sobrando."
+  ]);
 }
 function decrementByCode(code, idx) {
   const c = data.find(d => d.code === code);
@@ -1072,25 +1126,25 @@ function renderStats() {
         <span class="sh-num">${pct}%</span>
         <span class="sh-pct">${t.owned} / ${t.total}</span>
       </div>
-      <div class="sh-sub">${completedCount} of ${per.length} countries complete</div>
+      <div class="sh-sub">${completedCount} de ${per.length} países completos</div>
       <div class="sh-bar"><div style="width:${pct}%; background:${color};"></div></div>
     </div>
     <div class="stats-quad">
       <div class="stat-card">
         <div class="sc-num">${okCount}</div>
-        <div class="sc-label">unique owned</div>
+        <div class="sc-label">únicas que tenho</div>
       </div>
       <div class="stat-card miss">
         <div class="sc-num">${t.miss}</div>
-        <div class="sc-label">missing</div>
+        <div class="sc-label">faltando</div>
       </div>
       <div class="stat-card foils">
         <div class="sc-num">${f.owned}<span class="sc-sub"> / ${f.total}</span></div>
-        <div class="sc-label">foils owned (${fpct}%)</div>
+        <div class="sc-label">foils que tenho (${fpct}%)</div>
       </div>
       <div class="stat-card dupes">
         <div class="sc-num">${t.dupes}</div>
-        <div class="sc-label">dupes total</div>
+        <div class="sc-label">repetidas no total</div>
       </div>
     </div>
   `;
@@ -1099,17 +1153,17 @@ function renderStats() {
   html += `
     <div class="stats-section">
       <div class="stats-section-title">
-        <span>Almost there</span>
-        <span class="sst-hint">${almost.length} ${almost.length === 1 ? "country" : "countries"} ≥ 16/20</span>
+        <span>Quase lá</span>
+        <span class="sst-hint">${almost.length} ${almost.length === 1 ? "país" : "países"} ≥ 16/20</span>
       </div>
       <div class="stats-list">
   `;
   if (almost.length === 0) {
-    html += `<div class="stats-empty">No country at 16+/20 yet — keep going.</div>`;
+    html += `<div class="stats-empty">Nenhum país com 16+/20 ainda. Continue!</div>`;
   } else {
     for (const c of almost) {
       const remaining = c.total - c.owned;
-      html += statsRow(c, `${c.owned}/${c.total} <span style="color:var(--muted); font-weight:500; font-size:11px;">· ${remaining} left</span>`);
+      html += statsRow(c, `${c.owned}/${c.total} <span style="color:var(--muted); font-weight:500; font-size:11px;">· faltam ${remaining}</span>`);
     }
   }
   html += `</div></div>`;
@@ -1118,13 +1172,13 @@ function renderStats() {
   html += `
     <div class="stats-section">
       <div class="stats-section-title">
-        <span>Need work</span>
-        <span class="sst-hint">${need.length} ${need.length === 1 ? "country" : "countries"} ≤ 5/20</span>
+        <span>Precisa atenção</span>
+        <span class="sst-hint">${need.length} ${need.length === 1 ? "país" : "países"} ≤ 5/20</span>
       </div>
       <div class="stats-list">
   `;
   if (need.length === 0) {
-    html += `<div class="stats-empty">Nothing in the red — nice.</div>`;
+    html += `<div class="stats-empty">Nada no vermelho. Boa!</div>`;
   } else {
     for (const c of need) {
       html += statsRow(c, `<span style="color:var(--lvl-red);">${c.owned}</span>/${c.total}`);
@@ -1136,13 +1190,13 @@ function renderStats() {
   html += `
     <div class="stats-section">
       <div class="stats-section-title">
-        <span>Most dupes</span>
-        <span class="sst-hint">trade leverage</span>
+        <span>Mais repetidas</span>
+        <span class="sst-hint">poder de troca</span>
       </div>
       <div class="stats-list">
   `;
   if (dupes.length === 0) {
-    html += `<div class="stats-empty">No dupes yet.</div>`;
+    html += `<div class="stats-empty">Nenhuma repetida ainda.</div>`;
   } else {
     for (const c of dupes) {
       html += statsRow(c, `×${c.dupes}`, "dupes");
@@ -1150,6 +1204,12 @@ function renderStats() {
   }
   html += `</div></div>`;
 
+  html += helpCard("Como usar · Status", [
+    "Visão geral da coleção (só leitura).",
+    "<b>Quase lá</b>: quase completos · <b>Precisa atenção</b>: falta muito · <b>Mais repetidas</b>: maior poder de troca.",
+    "Toque em qualquer país nas listas pra ir direto pra ele.",
+    "Trocou uma figurinha? Vá na aba <b>Trade</b> e arraste ela pra esquerda: o Álbum já atualiza o número certo automaticamente."
+  ]);
   screen.innerHTML = html;
   for (const row of screen.querySelectorAll(".stats-row")) {
     row.onclick = () => goToCountry(row.dataset.code);
@@ -1267,6 +1327,7 @@ function renderMatch() {
   `;
   if (!loadedMatch) {
     html += `<div class="match-empty">Carregue o arquivo de match de um amigo pra ver o que vocês podem trocar.</div>`;
+    html += matchHelp();
     screen.innerHTML = html;
     appendMatchReset();
     wireMatchControls();
@@ -1286,9 +1347,19 @@ function renderMatch() {
   `;
   html += matchSection("Você recebe de " + loadedMatch.owner, "Nada por aqui: o que ele tem sobrando, você já tem.", iReceive, "recv");
   html += matchSection("Você dá pra " + loadedMatch.owner, "Nada por aqui: o que ele precisa, você não tem repetida.", iGive, "give");
+  html += matchHelp();
   screen.innerHTML = html;
   appendMatchReset();
   wireMatchControls();
+}
+function matchHelp() {
+  return helpCard("Como usar · Match", [
+    "<b>Gerar meu arquivo</b>: cria um arquivo com o que você tem sobrando e o que falta, pra enviar a um amigo.",
+    "<b>Carregar de um amigo</b>: abra o arquivo que ele te mandou.",
+    "<b>Verde</b> = você recebe dele · <b>Azul</b> = você dá pra ele.",
+    "<b>Carregar outro</b>: troca pro arquivo de outro amigo.",
+    "<b>Zerar minha coleção</b>: apaga tudo (faça Backup antes)."
+  ]);
 }
 function appendMatchReset() {
   const screen = document.getElementById("match");
